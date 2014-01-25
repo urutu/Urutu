@@ -4,7 +4,7 @@ Urutu
 A GPU based parallel programming library for Python
 
 ```python
-from Urutu import *```
+from Urutu import *
 import numpy as np
 
 @Urutu("CL")
