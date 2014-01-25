@@ -1,0 +1,24 @@
+# Developed by Aditya Atluri
+# Date: 18 Jan 2014
+# Mail: pyurutu@gmail.com
+# This file contains the execution of OpenCL code using PyOpenCL
+
+import pyopencl as cl
+import numpy as np
+import numpy.linalg as la
+
+class cl_exe:
+	def exe_cl(self,stringg,func_name,threads,blocks,args,returns):
+		ctx = cl.create_some_context()
+		queue = cl.CommandQueue(ctx)
+		mf = cl.mem_flags
+		cl_args = []
+		while arg in args:
+			cl_args.append(cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=arg))
+		print cl_args
+		dest_buf = cl.Buffer(ctx, mf.WRITE_ONLY, args[0].nbytes)
+		prg = cl.Program(ctx,stringg).build()
+		prg.CL_kernel(queue,threads,blocks, a_buf, b_buf, c_buf, dest_buf)
+		a_plus_b = np.empty_like(args[0])
+		cl.enqueue_copy(queue, a_plus_b, dest_buf)
+		return a_plus_b
