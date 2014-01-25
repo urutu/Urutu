@@ -9,9 +9,9 @@ System Requirements
 	-	Windows, Ubuntu (tested), Mac
 	-	Python 2.7, GCC 4.6
 	-	A GPU compatible with OpenCL or CUDA 5.0
-	-	[PyOpenCL](http://mathema.tician.de/software/pyopencl/) installed
+	-	[PyOpenCL](http://mathema.tician.de/software/pyopencl) installed
 		or
-	-	[PyCUDA](http://mathema.tician.de/software/pycuda/) installed
+	-	[PyCUDA](http://mathema.tician.de/software/pycuda) installed
 
 ```python
 from Urutu import *
