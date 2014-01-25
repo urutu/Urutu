@@ -3,7 +3,8 @@ Urutu
 
 A GPU based parallel programming library for Python
 
-```from Urutu import *
+```python
+from Urutu import *```
 import numpy as np
 
 @Urutu("CL")
@@ -20,4 +21,5 @@ c=np.random.randint(10,size=100)
 d=np.random.randint(10,size=100)
 
 print a,b
-print mul(a,b,c,d)```
+print mul(a,b,c,d)
+```
