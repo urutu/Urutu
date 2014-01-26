@@ -18,11 +18,19 @@ class cu_test:
 	func_name=[]
 	code=""
 	args = []
+	type_args = []
 	def __init__(self,fn,args):
 		stri=inspect.getsource(fn)
 		sh=shlex.shlex(stri)
 		self.code=stri
 		self.args = args
+		self.typeargs()
+
+	def typeargs(self):
+		for arg in self.args:
+			j = str(type(arg[0])).split(".")
+			j = j[1].split("'")
+			self.type_args.append(j[0])
 
 	def print_funcname_cu(self,def_i,a):
 		self.func_name=a[def_i+1]
@@ -30,7 +38,7 @@ class cu_test:
 		return def_i+2
 
 	def body_dev(self,stri_i):
-		self.kernel=self.kernel+stri_i+";\n}"
+		self.kernel=self.kernel+stri_i+";\n"
 
 	def inspectit(self,stri_1):
 		sh=shlex.shlex(stri_1)
@@ -57,24 +65,24 @@ class cu_test:
 
 	def threads_decl(self,stmt):
 		equ=stmt.index('=')
-		if self.variables_nam.count('tx')<1&stmt.count('tx')==1:
-			pos=stmt.index('tx')
+		if self.variables_nam.count('Tx')<1&stmt.count('Tx')==1:
+			pos=stmt.index('Tx')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
 			stri_i="int tx = threadIdx.x;\n"
 			self.threads.append(int(pos_val))
 			self.kernel=self.kernel+stri_i
-		if self.variables_nam.count('ty')<1&stmt.count('ty')==1:
-			pos=stmt.index('ty')
+		if self.variables_nam.count('Ty')<1&stmt.count('Ty')==1:
+			pos=stmt.index('Ty')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
 			stri_i="int ty = threadIdx.y;\n"
 			self.threads.append(int(pos_val))
 			self.kernel=self.kernel+stri_i
-		if self.variables_nam.count('tz')<1&stmt.count('tz')==1:
-			pos=stmt.index('tz')
+		if self.variables_nam.count('Tz')<1&stmt.count('Tz')==1:
+			pos=stmt.index('Tz')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
@@ -86,24 +94,24 @@ class cu_test:
 
 	def blocks_decl(self,stmt):
 		equ=stmt.index('=')
-		if self.variables_nam.count('bx')<1&stmt.count('bx')==1:
-			pos=stmt.index('bx')
+		if self.variables_nam.count('Bx')<1&stmt.count('Bx')==1:
+			pos=stmt.index('Bx')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
 			stri_i="int bx = blockIdx.x;\n"
 			self.blocks.append(int(pos_val))
 			self.kernel=self.kernel+stri_i
-		if self.variables_nam.count('by')<1&stmt.count('by')==1:
-			pos=stmt.index('by')
+		if self.variables_nam.count('By')<1&stmt.count('By')==1:
+			pos=stmt.index('By')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
 			stri_i="int by = blockIdx.y;\n"
 			self.blocks.append(int(pos_val))
 			self.kernel=self.kernel+stri_i
-		if self.variables_nam.count('bz')<1&stmt.count('bz')==1:
-			pos=stmt.index('bz')
+		if self.variables_nam.count('Bz')<1&stmt.count('Bz')==1:
+			pos=stmt.index('Bz')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
@@ -117,11 +125,31 @@ class cu_test:
 		if self.arguments.count(a[var_i])<2:
 			self.arguments.append(a[var_i])
 			if comma==True:
-				stri=",int* "+a[var_i]
-				self.kernel=self.kernel+stri
-			if comma==False:
-				stri="int* "+a[var_i]
-				self.kernel=self.kernel+stri
+				if "int64" == self.type_args[len(self.arguments)-1]:
+					stri=", long* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "int32" == self.type_args[len(self.arguments)-1]:
+					stri=", int* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "float32" == self.type_args[len(self.arguments)-1]:
+					stri=", float* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "float64" == self.type_args[len(self.arguments)-1]:
+					stri=", double* "+a[var_i]
+					self.kernel=self.kernel+stri
+			elif comma==False:
+				if "int64" == self.type_args[len(self.arguments)-1]:
+					stri=" long* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "int32" == self.type_args[len(self.arguments)-1]:
+					stri=" int* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "float32" == self.type_args[len(self.arguments)-1]:
+					stri=" float* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "float64" == self.type_args[len(self.arguments)-1]:
+					stri=" double* "+a[var_i]
+					self.kernel=self.kernel+stri
 
 	def execute(self):
 		sh=shlex.shlex(self.code)
@@ -146,22 +174,21 @@ class cu_test:
 				if a[ret]==',':
 					ret=ret+1
 				self.returns.append(a[ret])
-				self.print_variables(comma,ret,a)
 				ret=ret+1
 			self.kernel=self.kernel+"){\n"
 			control=control+1
 		if a[control]==':':
 			control=control+1
 		stri_1=self.code.split("\n")
-		self.print_numtabs(stri_1)
+		cu_test.print_numtabs(self,stri_1)
+		self.kernel = self.kernel + "}"
 #		self.print_cu()
-		for i in self.args:
-			print i
 		tmp = execu.cu_exe()
-		return tmp.exe_cu(self.kernel,self.func_name,self.threads,self.blocks,self.args)
+		return tmp.exe_cu(self.kernel,self.func_name,self.threads,self.blocks,self.args,self.returns)
 
 	def print_cu(self):
 		print "In print_cu:"
+		print self.type_args
 		print self.arguments
 		print self.returns
 		print self.variables_nam

@@ -20,12 +20,20 @@ class cl_test:
 	func_name=[]
 	code=""
 	args = []
+	type_args = []
 
 	def __init__(self,fn,args):
 		stri=inspect.getsource(fn)
 		sh=shlex.shlex(stri)
 		self.code=stri
 		self.args = args
+		self.typeargs()
+
+	def typeargs(self):
+		for arg in self.args:
+			j = str(type(arg[0])).split(".")
+			j = j[1].split("'")
+			self.type_args.append(j[0])
 
 	def print_funcname_cl(self,def_i,a):
 		self.func_name=a[def_i+1]
@@ -60,24 +68,24 @@ class cl_test:
 
 	def threads_decl(self,stmt):
 		equ=stmt.index('=')
-		if self.variables_nam.count('tx')<1&stmt.count('tx')==1:
-			pos=stmt.index('tx')
+		if self.variables_nam.count('Tx')<1&stmt.count('Tx')==1:
+			pos=stmt.index('Tx')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
 			stri_i="int tx = get_global_id(0);\n"
-			self.threads.append(2*int(pos_val))			#Threads doubled Here! Just Here!
+			self.threads.append(int(pos_val))
 			self.kernel=self.kernel+stri_i
-		if self.variables_nam.count('ty')<1&stmt.count('ty')==1:
-			pos=stmt.index('ty')
+		if self.variables_nam.count('Ty')<1&stmt.count('Ty')==1:
+			pos=stmt.index('Ty')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
 			stri_i="int ty = get_global_id(1);\n"
 			self.threads.append(int(pos_val))
 			self.kernel=self.kernel+stri_i
-		if self.variables_nam.count('tz')<1&stmt.count('tz')==1:
-			pos=stmt.index('tz')
+		if self.variables_nam.count('Tz')<1&stmt.count('Tz')==1:
+			pos=stmt.index('Tz')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
@@ -89,24 +97,24 @@ class cl_test:
 
 	def blocks_decl(self,stmt):
 		equ=stmt.index('=')
-		if self.variables_nam.count('bx')<1&stmt.count('bx')==1:
-			pos=stmt.index('bx')
+		if self.variables_nam.count('Bx')<1&stmt.count('Bx')==1:
+			pos=stmt.index('Bx')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
 			stri_i="int bx = get_local_id(0);\n"
 			self.blocks.append(int(pos_val))
 			self.kernel=self.kernel+stri_i
-		if self.variables_nam.count('by')<1&stmt.count('by')==1:
-			pos=stmt.index('by')
+		if self.variables_nam.count('By')<1&stmt.count('By')==1:
+			pos=stmt.index('By')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
 			stri_i="int by = get_local_id(1);\n"
 			self.blocks.append(int(pos_val))
 			self.kernel=self.kernel+stri_i
-		if self.variables_nam.count('bz')<1&stmt.count('bz')==1:
-			pos=stmt.index('bz')
+		if self.variables_nam.count('Bz')<1&stmt.count('Bz')==1:
+			pos=stmt.index('Bz')
 			pos_val=stmt[pos+1+equ]
 			self.variables_nam.append(stmt[pos])
 			self.variables_val.append(int(pos_val))
@@ -120,11 +128,31 @@ class cl_test:
 		if self.arguments.count(a[var_i])<2:
 			self.arguments.append(a[var_i])
 			if comma==True:
-				stri=", __global int* "+a[var_i]
-				self.kernel=self.kernel+stri
-			if comma==False:
-				stri=" __global int* "+a[var_i]
-				self.kernel=self.kernel+stri
+				if "int64" == self.type_args[len(self.arguments)-1]:
+					stri=", __global long* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "int32" == self.type_args[len(self.arguments)-1]:
+					stri=", __global int* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "float32" == self.type_args[len(self.arguments)-1]:
+					stri=", __global float* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "float64" == self.type_args[len(self.arguments)-1]:
+					stri=", __global double* "+a[var_i]
+					self.kernel=self.kernel+stri
+			elif comma==False:
+				if "int64" == self.type_args[len(self.arguments)-1]:
+					stri=" __global long* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "int32" == self.type_args[len(self.arguments)-1]:
+					stri=" __global int* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "float32" == self.type_args[len(self.arguments)-1]:
+					stri=" __global float* "+a[var_i]
+					self.kernel=self.kernel+stri
+				elif "float64" == self.type_args[len(self.arguments)-1]:
+					stri=" __global double* "+a[var_i]
+					self.kernel=self.kernel+stri
 
 	def execute(self):
 		sh=shlex.shlex(self.code)
@@ -158,8 +186,6 @@ class cl_test:
 		cl_test.print_numtabs(self,stri_1)
 		self.kernel = self.kernel + "}"
 #		self.print_cl()
-#		for i in self.args:
-#			print i
 		tmp = execl.cl_exe()
 		return tmp.exe_cl(self.kernel,self.func_name,self.threads,self.blocks,self.args,self.returns)
 
@@ -177,8 +203,4 @@ class cl_test:
 		print self.func_name
 		print self.code
 
-def urutu_cl(fn):
-	def inner(*args,**kargs):
-		cl=cl_test(fn,args)
-		return cl.execute()
-	return inner
+
