@@ -9,4 +9,5 @@ setup(name = 'Urutu',
 	author_email = 'adityaaatluri@gmail.com',
 	url = 'https://github.com/urutu/Urutu',
 	packages = ['Urutu','Urutu.cl','Urutu.cu'],
+	license = 'Apache',
 	)
