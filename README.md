@@ -20,7 +20,7 @@ pip install Urutu
 ```
 
 =======
->>>>>>> e753cdd11a2374780ab952193b267bde32bfca02
+
 Sample Code
 -----------
 
