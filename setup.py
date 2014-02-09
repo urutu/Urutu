@@ -10,5 +10,8 @@ setup(name = 'Urutu',
 	url = 'https://github.com/urutu/Urutu',
 	packages = ['Urutu','Urutu.cl','Urutu.cu'],
 	license = 'Apache',
+<<<<<<< HEAD
 	
+=======
+>>>>>>> e753cdd11a2374780ab952193b267bde32bfca02
 	)

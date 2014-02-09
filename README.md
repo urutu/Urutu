@@ -11,6 +11,7 @@ System Requirements
   -  A GPU compatible with OpenCL or CUDA 5.0
   -  [PyOpenCL](http://mathema.tician.de/software/pyopencl) or [PyCUDA](http://mathema.tician.de/software/pycuda) installed
 
+<<<<<<< HEAD
 Setup
 ------
 
@@ -18,6 +19,8 @@ Setup
 pip install Urutu
 ```
 
+=======
+>>>>>>> e753cdd11a2374780ab952193b267bde32bfca02
 Sample Code
 -----------
 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Developed by Aditya Atluri
 # Date: 18 Jan 2014
 # Mail: pyurutu@gmail.com
@@ -6,6 +7,10 @@
 
 from cl import cl_test
 from cu import cu_test
+=======
+from cl import *
+from cu import *
+>>>>>>> e753cdd11a2374780ab952193b267bde32bfca02
 
 def Urutu(arg):
 	def wrap(fn):
