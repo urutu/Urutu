@@ -1,27 +1,3 @@
-[Urutu](http://urutu.github.io)
-=======
-
-A GPU based parallel programming library for Python
-
-System Requirements
--------------------
-
-  -  Windows, Ubuntu (tested), Mac
-  -  Python 2.7, GCC 4.6
-  -  A GPU compatible with OpenCL or CUDA 5.0
-  -  [PyOpenCL](http://mathema.tician.de/software/pyopencl) or [PyCUDA](http://mathema.tician.de/software/pycuda) installed
-
-Setup
-------
-
-```shell
-pip install Urutu
-```
-
-Sample Code
------------
-
-```python
 from Urutu import *
 import numpy as np
 
@@ -52,4 +28,3 @@ print "The Array A is: \n",a
 print "The Array B is: \n",b
 print "Running on OpenCL.. \n",divmul(a,b,c,d)
 print "Running on CUDA.. \n",addsub(a,b,e,f)
-```
