@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> ca74d31481b6ca65fa42ccf385776ad3b596044b
 # Developed by Aditya Atluri
 # Date: 18 Jan 2014
 # Mail: pyurutu@gmail.com
@@ -6,6 +10,13 @@
 
 from cl import cl_test
 from cu import cu_test
+<<<<<<< HEAD
+=======
+=======
+from cl import *
+from cu import *
+>>>>>>> e753cdd11a2374780ab952193b267bde32bfca02
+>>>>>>> ca74d31481b6ca65fa42ccf385776ad3b596044b
 
 def Urutu(arg):
 	def wrap(fn):

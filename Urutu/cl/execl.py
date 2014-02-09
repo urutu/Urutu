@@ -2,7 +2,14 @@
 # Date: 18 Jan 2014
 # Mail: pyurutu@gmail.com
 # This file contains the execution of OpenCL code using PyOpenCL
+<<<<<<< HEAD
 # Modified: 18 Jan 2014
+=======
+<<<<<<< HEAD
+# Modified: 18 Jan 2014
+=======
+>>>>>>> e753cdd11a2374780ab952193b267bde32bfca02
+>>>>>>> ca74d31481b6ca65fa42ccf385776ad3b596044b
 
 import pyopencl as cl
 import numpy as np

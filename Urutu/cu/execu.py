@@ -1,9 +1,18 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> ca74d31481b6ca65fa42ccf385776ad3b596044b
 # Developed by Aditya Atluri
 # Date: 18 Jan 2014
 # Mail: pyurutu@gmail.com
 # This file contains the execution of CUDA code using PyCUDA
 # Modified: 18 Jan 2014
 
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> e753cdd11a2374780ab952193b267bde32bfca02
+>>>>>>> ca74d31481b6ca65fa42ccf385776ad3b596044b
 import pycuda.driver as cuda
 import pycuda.autoinit
 from pycuda.compiler import SourceModule

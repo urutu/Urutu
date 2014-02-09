@@ -40,11 +40,16 @@ def divmul(a,b,c,d):
 def addsub(a,b,e,f):
 	Tx, Ty, Tz = 100, 1, 1
 	Bx, By, Bz = 1, 1, 1
+<<<<<<< HEAD
 	__shared is x , y
 	x = a[0:100]
 	y = b[0:100]
 	e[tx] = x[tx] + y[tx]
 	f[tx] = x[tx] - y[tx]
+=======
+	e[tx] = a[tx] + b[tx]
+	f[tx] = a[tx] - b[tx]
+>>>>>>> ca74d31481b6ca65fa42ccf385776ad3b596044b
 	return e, f
 
 a=np.random.randint(10,size=100)
