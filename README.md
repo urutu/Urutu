@@ -11,7 +11,7 @@ System Requirements
   -  A GPU compatible with OpenCL or CUDA 5.0
   -  [PyOpenCL](http://mathema.tician.de/software/pyopencl) or [PyCUDA](http://mathema.tician.de/software/pycuda) installed
 
-<<<<<<< HEAD
+
 Setup
 ------
 
