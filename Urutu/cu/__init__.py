@@ -2,7 +2,7 @@
 # Date: 18 Jan 2014
 # Mail: pyurutu@gmail.com
 # This file contains the execution of OpenCL code using PyOpenCL
-# Modified: 9 Feb 2014
+# Modified: 10 Feb 2014
 
 import inspect,shlex
 import numpy as np
@@ -27,7 +27,7 @@ class cu_test:
 	sentences = []
 	__global = []
 	__shared = []
-	__private = []
+	__register = []
 	__constant = []
 	tabs = 0
 
@@ -39,26 +39,26 @@ class cu_test:
 		self.typeargs()
 
 	def decvars(self, phrase):
-		phrase.pop(1)
-		if phrase[0] == '__global':
+#		print phrase
+		if phrase[0] == '__global' and phrase[1] == 'is':
 			phrase.pop(0)
 			for word in phrase:
 				if word != ',':
 					self.__global.append(word)
 #			print self.__global
-		if phrase[0] == '__shared':
+		if phrase[0] == '__shared' and phrase[1] == 'is':
 			phrase.pop(0)
 			for word in phrase:
 				if word != ',':
 					self.__shared.append(word)
 #			print self.__shared
-		if phrase[0] == '__private':
+		if phrase[0] == '__register' and phrase[1] == 'is':
 			phrase.pop(0)
 			for word in phrase:
 				if word != ',':
-					self.__private.append(word)
-#			print self.__private
-		if phrase[0] == '__constant':
+					self.__register.append(word)
+#			print self.__register
+		if phrase[0] == '__constant' and phrase[1] == 'is':
 			phrase.pop(0)
 			for word in phrase:
 				if word != ',':
@@ -104,7 +104,7 @@ class cu_test:
 		if self.blocks_dec == False:
 			self.blocks_decl(stmt)
 			return
-		if stmt[0] == '__global' or stmt[0] == '__shared' or stmt[0] == '__private' or stmt[0] == '__constant' :
+		if stmt[0] == '__global' or stmt[0] == '__shared' or stmt[0] == '__register' or stmt[0] == '__constant' :
 			self.decvars(stmt)
 			return
 		if stmt.count('if') > 0:
@@ -115,6 +115,43 @@ class cu_test:
 			return
 #		print stmt, self.tabs
 
+#	__constant here!!
+	def decconstant(self, stmt):
+		return
+		print "In statement", stmt
+		index = stmt.index('=') + 1
+		deftype = self.type_vars[self.var_nam.index(stmt[index])]
+#		print deftype
+		if stmt.count(':') == 1:
+			endindex = int(stmt[stmt.index(':') + 1])
+			startindex = int(stmt[stmt.index(':') - 1])
+			arraysize = int(endindex) - int(startindex)
+		else:
+			arraysize = self.args[self.var_nam.index(stmt[index])].size
+			endindex = arraysize - 1
+			startindex = 0
+		self.kernel = self.kernel + "__constant__ " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
+		self.var_nam.append(stmt[index - 1])
+
+
+#	__global here!!
+	def decglobal(self,stmt):
+#		print "In statement", stmt
+		index = stmt.index('=') + 1
+		deftype = self.type_vars[self.var_nam.index(stmt[index])]
+#		print deftype
+		if stmt.count(':') == 1:
+			endindex = int(stmt[stmt.index(':') + 1])
+			startindex = int(stmt[stmt.index(':') - 1])
+			arraysize = int(endindex) - int(startindex)
+		else:
+			arraysize = self.args[self.var_nam.index(stmt[index])].size
+			endindex = arraysize - 1
+			startindex = 0
+		self.kernel = "__device__ " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + self.kernel + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
+		self.var_nam.append(stmt[index - 1])
+
+#	__shared is here!!
 	def decshared(self,stmt):
 #		print "In statement", stmt
 		index = stmt.index('=') + 1
@@ -128,11 +165,35 @@ class cu_test:
 			arraysize = self.args[self.var_nam.index(stmt[index])].size
 			endindex = arraysize - 1
 			startindex = 0
-		self.kernel = self.kernel + "__shared__ " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"		
+		self.kernel = self.kernel + "__shared__ " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
+		self.var_nam.append(stmt[index - 1])
+
+#	__register here!!!
+	def decregister(self,stmt):
+#		print "In decregister", stmt
+		index = stmt.index('=') + 1
+		deftype = self.type_vars[self.var_nam.index(stmt[index])]
+#		print deftype
+		if stmt.count(':') == 1:
+			endindex = int(stmt[stmt.index(':') + 1])
+			startindex = int(stmt[stmt.index(':') - 1])
+			arraysize = int(endindex) - int(startindex)
+		else:
+			arraysize = self.args[self.var_nam.index(stmt[index])].size
+			endindex = arraysize - 1
+			startindex = 0
+		self.kernel = self.kernel + "__local__ " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
+		self.var_nam.append(stmt[index - 1])
 
 	def checkvars(self,stmt,phrase):
 		if self.__shared.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
 			self.decshared(stmt)
+		elif self.__global.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
+			self.decglobal(stmt)
+		elif self.__register.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
+			self.decregister(stmt)
+		elif self.__constant.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
+			self.decconstant(stmt)
 		else:
 			self.kernel = self.kernel + str(phrase) + ";\n"
 
@@ -255,7 +316,7 @@ class cu_test:
 		self.sentences = self.code.split("\n")
 		self.body()
 		self.kernel = self.kernel + "}"
-#		self.print_cu()
+		self.print_cu()
 		tmp = execu.cu_exe()
 		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
 
