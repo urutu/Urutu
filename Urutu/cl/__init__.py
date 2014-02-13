@@ -23,11 +23,14 @@ class cl_test:
 	code = ""
 	args = []
 	type_args = []
+	type_vars = []
 	words = []
 	sentences = []
-	local = []
-	private = []
-	constant = []
+	__global = []
+	__shared = []
+	__register = []
+	__constant = []
+	tabs = 0
 	
 	def __init__(self, fn, args):
 		stri = inspect.getsource(fn)
@@ -36,11 +39,39 @@ class cl_test:
 		self.args = args
 		self.typeargs()
 
+	def decvars(self, phrase):
+#		print phrase
+		if phrase[0] == '__global' and phrase[1] == 'is':
+			phrase.pop(0)
+			for word in phrase:
+				if word != ',':
+					self.__global.append(word)
+#			print self.__global
+		if phrase[0] == '__shared' and phrase[1] == 'is':
+			phrase.pop(0)
+			for word in phrase:
+				if word != ',':
+					self.__shared.append(word)
+#			print self.__shared
+		if phrase[0] == '__register' and phrase[1] == 'is':
+			phrase.pop(0)
+			for word in phrase:
+				if word != ',':
+					self.__register.append(word)
+#			print self.__register
+		if phrase[0] == '__constant' and phrase[1] == 'is':
+			phrase.pop(0)
+			for word in phrase:
+				if word != ',':
+					self.__constant.append(word)
+#			print self.__constant
+
 	def typeargs(self):
 		for arg in self.args:
 			j = str(type(arg[0])).split(".")
 			j = j[1].split("'")
 			self.type_args.append(j[0])
+			self.type_vars.append(j[0])
 
 	def funcname_cl(self, control):
 		self.func_name = self.keys[control + 1]
@@ -50,8 +81,17 @@ class cl_test:
 	def semi_colon(self, phrase):
 		self.kernel = self.kernel + phrase + ";\n"
 
-	def inspect_it(self, phrase):
-		sh = shlex.shlex(phrase)
+	def inspect_it(self, sentence):
+		phrase = sentence.split('\t')
+		tab = phrase.count('')
+		if tab > self.tabs:
+			for j in range(tab - self.tabs):
+				self.kernel = self.kernel + "{\n"
+		if tab < self.tabs:
+			for j in range(self.tabs - tab):
+				self.kernel = self.kernel + "}\n"
+		self.tabs = phrase.count('')
+		sh = shlex.shlex(phrase[-1])
 		i = sh.get_token()
 		if i == 'def' or i == '@' or i == 'return' or i == '' or i == '#' or i == '//' or i == '"""':
 			return
@@ -65,13 +105,102 @@ class cl_test:
 		if self.blocks_dec == False:
 			self.blocks_decl(stmt)
 			return
-		self.semi_colon(phrase)
-	
+		if stmt[0] == '__global' or stmt[0] == '__shared' or stmt[0] == '__register' or stmt[0] == '__constant' :
+			self.decvars(stmt)
+			return
+		if stmt.count('if') > 0:
+#			print "Going into IF... AKA void!"
+			return
+		else:
+			self.checkvars(stmt,phrase[-1])
+			return
+#		print stmt, self.tabs
+
+#	__constant here!!
+	def decconstant(self, stmt):
+		return
+		print "In statement", stmt
+		index = stmt.index('=') + 1
+		deftype = self.type_vars[self.var_nam.index(stmt[index])]
+#		print deftype
+		if stmt.count(':') == 1:
+			endindex = int(stmt[stmt.index(':') + 1])
+			startindex = int(stmt[stmt.index(':') - 1])
+			arraysize = int(endindex) - int(startindex)
+		else:
+			arraysize = self.args[self.var_nam.index(stmt[index])].size
+			endindex = arraysize - 1
+			startindex = 0
+		self.kernel = self.kernel + "__constant " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
+		self.var_nam.append(stmt[index - 1])
+
+#	__global here!!
+	def decglobal(self,stmt):
+#		print "In statement", stmt
+		index = stmt.index('=') + 1
+		deftype = self.type_vars[self.var_nam.index(stmt[index])]
+#		print deftype
+		if stmt.count(':') == 1:
+			endindex = int(stmt[stmt.index(':') + 1])
+			startindex = int(stmt[stmt.index(':') - 1])
+			arraysize = int(endindex) - int(startindex)
+		else:
+			arraysize = self.args[self.var_nam.index(stmt[index])].size
+			endindex = arraysize - 1
+			startindex = 0
+		self.kernel = self.kernel +  "__global " + str(deftype) + "* " + str(stmt[0]) + " = " + " (__global " + str(deftype) + "* )&" + str(stmt[index]) + "[" + str(startindex) + "]" + ";\n"
+		self.var_nam.append(stmt[index - 1])
+
+#	__shared is here!!
+	def decshared(self,stmt):
+#		print "In statement", stmt
+		index = stmt.index('=') + 1
+		deftype = self.type_vars[self.var_nam.index(stmt[index])]
+#		print deftype
+		if stmt.count(':') == 1:
+			endindex = int(stmt[stmt.index(':') + 1])
+			startindex = int(stmt[stmt.index(':') - 1])
+			arraysize = int(endindex) - int(startindex)
+		else:
+			arraysize = self.args[self.var_nam.index(stmt[index])].size
+			endindex = arraysize - 1
+			startindex = 0
+		self.kernel = self.kernel + "__local " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
+		self.var_nam.append(stmt[index - 1])
+
+#	__register here!!!
+	def decregister(self,stmt):
+#		print "In decregister", stmt
+		index = stmt.index('=') + 1
+		deftype = self.type_vars[self.var_nam.index(stmt[index])]
+#		print deftype
+		if stmt.count(':') == 1:
+			endindex = int(stmt[stmt.index(':') + 1])
+			startindex = int(stmt[stmt.index(':') - 1])
+			arraysize = int(endindex) - int(startindex)
+		else:
+			arraysize = self.args[self.var_nam.index(stmt[index])].size
+			endindex = arraysize - 1
+			startindex = 0
+		self.kernel = self.kernel + "__private " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
+		self.var_nam.append(stmt[index - 1])
+
+	def checkvars(self,stmt,phrase):
+		if self.__shared.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
+			self.decshared(stmt)
+		elif self.__global.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
+			self.decglobal(stmt)
+		elif self.__register.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
+			self.decregister(stmt)
+		elif self.__constant.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
+			self.decconstant(stmt)
+		else:
+			self.kernel = self.kernel + str(phrase) + ";\n"
+
 	def body(self):
 		for sentence in self.sentences:
 			if sentence.split('\t')!=-1:
-				phrase = sentence.split('\t')
-				self.inspect_it(phrase[-1])
+				self.inspect_it(sentence)
 
 	def threads_decl(self, stmt):
 		equ = stmt.index('=')
@@ -137,21 +266,30 @@ class cl_test:
 			if comma == True:
 				if "int64" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + ", __global long* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "long"
 				elif "int32" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + ", __global int* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "int"
 				elif "float32" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + ", __global float* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "float"
 				elif "float64" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + ", __global double* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "double"
 			elif comma == False:
 				if "int64" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + " __global long* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "long"
 				elif "int32" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + " __global int* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "int"
 				elif "float32" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + " __global float* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "float"
 				elif "float64" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + " __global double* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "double"
+			self.var_nam.append(self.keys[control])
 
 	def execute(self):
 		sh = shlex.shlex(self.code)
@@ -177,7 +315,7 @@ class cl_test:
 					ret = ret + 1
 				self.returns.append(self.keys[ret])
 				ret = ret + 1
-			self.kernel = self.kernel + "){\n"
+			self.kernel = self.kernel + ")\n"
 			control = control + 1
 		if self.keys[control] == ':':
 			control = control + 1
@@ -190,6 +328,7 @@ class cl_test:
 
 	def print_cl(self):
 		print "In print_cl:"
+		print self.type_args
 		print self.arguments
 		print self.returns
 		print self.var_nam
