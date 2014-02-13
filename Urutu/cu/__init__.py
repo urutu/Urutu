@@ -133,7 +133,6 @@ class cu_test:
 		self.kernel = self.kernel + "__constant__ " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
 		self.var_nam.append(stmt[index - 1])
 
-
 #	__global here!!
 	def decglobal(self,stmt):
 #		print "In statement", stmt
@@ -269,20 +268,26 @@ class cu_test:
 					self.type_vars[len(self.arguments) - 1] = "long"
 				elif "int32" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + ", int* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "int"
 				elif "float32" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + ", float* " + self.keys[control]
-				elif "float64" == self.type_args[len(self.arguments)-1]:
+					self.type_vars[len(self.arguments) - 1] = "float"
+				elif "float64" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + ", double* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "double"
 			elif comma == False:
 				if "int64" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + " long* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "long"
 				elif "int32" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + " int* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "int"
 				elif "float32" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + " float* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "float"
 				elif "float64" == self.type_args[len(self.arguments) - 1]:
 					self.kernel = self.kernel + " double* " + self.keys[control]
+					self.type_vars[len(self.arguments) - 1] = "double"
 			self.var_nam.append(self.keys[control])
 
 	def execute(self):
@@ -316,7 +321,7 @@ class cu_test:
 		self.sentences = self.code.split("\n")
 		self.body()
 		self.kernel = self.kernel + "}"
-		self.print_cu()
+#		self.print_cu()
 		tmp = execu.cu_exe()
 		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
 
