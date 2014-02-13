@@ -37,6 +37,9 @@ import numpy as np
 def divmul(a,b,c,d):
 	Tx, Ty, Tz = 100, 1, 1
 	Bx, By, Bz = 1, 1, 1
+	__global is x, y
+	x = a[0:100]
+	y = b[0:100]
 	c[tx] = a[tx] / b[tx]
 	d[tx] = a[tx] * b[tx]
 	return c, d
