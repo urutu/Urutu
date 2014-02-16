@@ -38,7 +38,7 @@ class cu_test:
 		self.args = args
 		self.typeargs()
 
-	def decvars(self, phrase):
+	def decarrays(self, phrase):
 #		print phrase
 		if phrase[0] == '__global' and phrase[1] == 'is':
 			phrase.pop(0)
@@ -105,7 +105,7 @@ class cu_test:
 			self.blocks_decl(stmt)
 			return
 		if stmt[0] == '__global' or stmt[0] == '__shared' or stmt[0] == '__register' or stmt[0] == '__constant' :
-			self.decvars(stmt)
+			self.decarrays(stmt)
 			return
 		if stmt.count('if') > 0:
 #			print "Going into IF... AKA void!"
@@ -184,6 +184,34 @@ class cu_test:
 		self.kernel = self.kernel + "__local__ " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
 		self.var_nam.append(stmt[index - 1])
 
+# Need to complete here!!
+	def checkchars(self, var):
+		return False
+
+# Checking the type of variable to be created
+	def checktype(self,stmt,var):
+		print var, stmt
+		if stmt.count('.') != 0 and var.find('"') == -1 and self.checkchars(var) == False:
+			return 'float', '.'+str(stmt[stmt.index('.') + 1])
+		if var.find('.') == -1 and var.find('"') == -1 and self.checkchars(var) == False:
+			return 'int', ''
+		if var.find('"') != -1:
+			return 'char*', ''
+
+# a = 10 type variables are declared here!
+	def decvars(self,stmt,phrase):
+		print phrase
+		ideq = stmt.index('=')
+		for i in stmt:
+			if self.var_nam.count(i) == 0 and stmt.index('=') > stmt.index(i) and i != ',':
+				ret_checktype = self.checktype(stmt,stmt[ideq + 1 + stmt.index(i)])
+				self.kernel = self.kernel + str(ret_checktype[0]) + " " + str(i) + " = " + str(stmt[stmt.index(i) + stmt.index('=') + 1]) + str(ret_checktype[1]) + ";\n"
+				return
+			else:
+				self.kernel = self.kernel + str(phrase) + ";\n"
+				return
+
+#	CHECKVARS here!!
 	def checkvars(self,stmt,phrase):
 		if self.__shared.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
 			self.decshared(stmt)
@@ -194,8 +222,9 @@ class cu_test:
 		elif self.__constant.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
 			self.decconstant(stmt)
 		else:
-			self.kernel = self.kernel + str(phrase) + ";\n"
+			self.decvars(stmt,phrase)
 
+# body (self) here!
 	def body(self):
 		for sentence in self.sentences:
 			if sentence.split('\t')!=-1:
@@ -321,7 +350,7 @@ class cu_test:
 		self.sentences = self.code.split("\n")
 		self.body()
 		self.kernel = self.kernel + "}"
-#		self.print_cu()
+		self.print_cu()
 		tmp = execu.cu_exe()
 		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
 
