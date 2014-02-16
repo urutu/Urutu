@@ -16,7 +16,7 @@ Setup
 ------
 
 ```shell
-pip install Urutu
+sudo pip install Urutu
 ```
 
 =======
