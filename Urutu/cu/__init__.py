@@ -2,6 +2,7 @@
 # Date: 18 Jan 2014
 # Mail: pyurutu@gmail.com
 # This file contains the execution of OpenCL code using PyOpenCL
+# This file converts Python code to CUDA code
 # Modified: 10 Feb 2014
 
 import inspect,shlex
@@ -31,7 +32,7 @@ class cu_test:
 	__constant = []
 	tabs = 0
 
-	def __init__(self,fn,args):
+	def __init__(self, fn, args):
 		stri = inspect.getsource(fn)
 		sh = shlex.shlex(stri)
 		self.code = stri
@@ -192,11 +193,11 @@ class cu_test:
 	def checktype(self,stmt,var):
 #		print var, stmt
 		if stmt.count('.') != 0 and var.find('"') == -1 and self.checkchars(var) == False:
-			return 'float', '.'+str(stmt[stmt.index('.') + 1])
+			return 'float', '.'+str(stmt[stmt.index('.') + 1]), ''
 		if var.find('.') == -1 and var.find('"') == -1 and self.checkchars(var) == False:
-			return 'int', ''
+			return 'int', '', ''
 		if var.find('"') != -1:
-			return 'char*', ''
+			return 'char', '', '[]'
 
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase):
@@ -205,7 +206,7 @@ class cu_test:
 		for i in stmt:
 			if self.var_nam.count(i) == 0 and stmt.index('=') > stmt.index(i) and i != ',':
 				ret_checktype = self.checktype(stmt,stmt[ideq + 1 + stmt.index(i)])
-				self.kernel = self.kernel + str(ret_checktype[0]) + " " + str(i) + " = " + str(stmt[stmt.index(i) + stmt.index('=') + 1]) + str(ret_checktype[1]) + ";\n"
+				self.kernel = self.kernel + str(ret_checktype[0]) + " " + str(i) + str(ret_checktype[2]) + " = " + str(stmt[stmt.index(i) + stmt.index('=') + 1]) + str(ret_checktype[1]) + ";\n"
 				return
 			else:
 				self.kernel = self.kernel + str(phrase) + ";\n"
