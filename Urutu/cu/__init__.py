@@ -190,7 +190,7 @@ class cu_test:
 
 # Checking the type of variable to be created
 	def checktype(self,stmt,var):
-		print var, stmt
+#		print var, stmt
 		if stmt.count('.') != 0 and var.find('"') == -1 and self.checkchars(var) == False:
 			return 'float', '.'+str(stmt[stmt.index('.') + 1])
 		if var.find('.') == -1 and var.find('"') == -1 and self.checkchars(var) == False:
@@ -200,7 +200,7 @@ class cu_test:
 
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase):
-		print phrase
+#		print phrase
 		ideq = stmt.index('=')
 		for i in stmt:
 			if self.var_nam.count(i) == 0 and stmt.index('=') > stmt.index(i) and i != ',':
@@ -350,7 +350,7 @@ class cu_test:
 		self.sentences = self.code.split("\n")
 		self.body()
 		self.kernel = self.kernel + "}"
-		self.print_cu()
+#		self.print_cu()
 		tmp = execu.cu_exe()
 		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
 
