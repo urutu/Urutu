@@ -5,6 +5,9 @@ import numpy as np
 def divmul(a,b,c,d):
 	Tx, Ty, Tz = 100, 1, 1
 	Bx, By, Bz = 1, 1, 1
+	x = 11
+	y = 1.3
+	z = "opencl"
 	c[tx] = a[tx] / b[tx]
 	d[tx] = a[tx] * b[tx]
 	return c, d
@@ -15,7 +18,7 @@ def addsub(a,b,e,f):
 	Bx, By, Bz = 1, 1, 1
 	x = 10
 	y = 1.2
-	z = "adi"
+	z = "cuda"
 	e[tx] = a[tx] + b[tx]
 	f[tx] = a[tx] - b[tx]
 	return e, f
