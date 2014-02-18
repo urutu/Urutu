@@ -203,7 +203,7 @@ class cu_test:
 	def decvars(self,stmt,phrase):
 		print phrase
 		ideq = stmt.index('=')
-		commaid = []
+		commaid = [ideq]
 		tmp = stmt
 		for k in tmp:
 			if k == ',':

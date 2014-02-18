@@ -8,15 +8,15 @@ def divmul(a,b,c,d):
 	__global is x , y
 	x = a[0:100]
 	y = b[0:100]
-	c[tx] = a[tx] / b[tx]
-	d[tx] = a[tx] * b[tx]
+	c[tx] = x[tx] / y[tx]
+	d[tx] = x[tx] * y[tx]
 	return c, d
 
 @Urutu("CU")
 def addsub(a,b,e,f):
 	Tx, Ty, Tz = 100, 1, 1
 	Bx, By, Bz = 1, 1, 1
-	__shared is x , y
+	__globa is x , y
 	x = a[0:100]
 	y = b[0:100]
 	e[tx] = x[tx] + y[tx]
