@@ -184,33 +184,62 @@ class cu_test:
 			startindex = 0
 		self.kernel = self.kernel + "__local__ " + str(deftype) + " " + str(stmt[0]) + "[" + str(arraysize) + "];\n" + str(stmt[0]) + "[tx] = " + str(stmt[index]) + "[tx + " + str(startindex) + "];\n"
 		self.var_nam.append(stmt[index - 1])
+		return
 
 # Need to complete here!!
+# Check whether the variables are declared or not.
 	def checkchars(self, var):
 		return False
 
+# convert the list into string
+	def stringize(self, stmt):
+		phrase = ''
+		for i in stmt:
+			phrase = phrase + str(i)
+		return phrase
+
 # Checking the type of variable to be created
-	def checktype(self,stmt,var):
-#		print var, stmt
-		if stmt.count('.') != 0 and var.find('"') == -1 and self.checkchars(var) == False:
-			return 'float', '.'+str(stmt[stmt.index('.') + 1]), ''
-		if var.find('.') == -1 and var.find('"') == -1 and self.checkchars(var) == False:
-			return 'int', '', ''
-		if var.find('"') != -1:
-			return 'char', '', '[]'
+	def checktype(self,var,val):
+#		print var, val
+		if val.count('.') == 1:
+			return 'float ', self.stringize(var[:]) , '',  self.stringize(val[:])
+		try:
+			int(self.stringize(val))
+			return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
+		except:
+			if self.stringize(val).find('"') != -1:
+				return 'char ', self.stringize(var[:]), '[]',  self.stringize(val[:])
+			elif self.stringize(val).find("'") != -1:
+				val = str(val[0]).split("'")
+				quote = ['"']
+				quote.append(val[1])
+				quote.append('"')
+				return 'char ' , self.stringize(var[:]), '[]', self.stringize(quote)
+			else:
+				return '','',self.stringize(var[:]), self.stringize(val[:])
 
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase):
-#		print phrase
 		ideq = stmt.index('=')
-		for i in stmt:
-			if self.var_nam.count(i) == 0 and stmt.index('=') > stmt.index(i) and i != ',':
-				ret_checktype = self.checktype(stmt,stmt[ideq + 1 + stmt.index(i)])
-				self.kernel = self.kernel + str(ret_checktype[0]) + " " + str(i) + str(ret_checktype[2]) + " = " + str(stmt[stmt.index(i) + stmt.index('=') + 1]) + str(ret_checktype[1]) + ";\n"
-				return
-			else:
-				self.kernel = self.kernel + str(phrase) + ";\n"
-				return
+		commavarid = [-1]
+		commavalid = [ideq]
+		tmp = stmt
+		for k in tmp:
+			if k == ',' and tmp.index(k) < ideq:
+				commavarid.append(tmp.index(k))
+				tmp[tmp.index(k)] = ''
+			if k == ',' and tmp.index(k) > ideq:
+				commavalid.append(tmp.index(k))
+				tmp[tmp.index(k)] = ''
+		commacount = len(commavarid)
+		commavalid.append(len(tmp))
+		commavarid.append(ideq)
+		for i in range(commacount):
+			if self.var_nam.count(i) == 0 and stmt.index('=') > i:
+				ret_checktype = self.checktype(stmt[commavarid[i]+1:commavarid[i+1]],stmt[commavalid[i]+1:commavalid[i+1]])
+#				print ret_checktype
+				self.kernel = self.kernel + ret_checktype[0] + ret_checktype[1] + ret_checktype[2] + " = " + ret_checktype[3] + ";\n"
+		return
 
 #	CHECKVARS here!!
 	def checkvars(self,stmt,phrase):
@@ -224,12 +253,14 @@ class cu_test:
 			self.decconstant(stmt)
 		else:
 			self.decvars(stmt,phrase)
+		return
 
 # body (self) here!
 	def body(self):
 		for sentence in self.sentences:
 			if sentence.split('\t')!=-1:
 				self.inspect_it(sentence)
+		return
 
 	def threads_decl(self, stmt):
 		equ = stmt.index('=')

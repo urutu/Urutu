@@ -40,8 +40,9 @@ def divmul(a,b,c,d):
 	__global is x, y
 	x = a[0:100]
 	y = b[0:100]
-	c[tx] = a[tx] / b[tx]
-	d[tx] = a[tx] * b[tx]
+	t, u, v, w = 10, 10.0, 'opencl', "open.cl"
+	c[tx] = x[tx] / y[tx]
+	d[tx] = x[tx] * y[tx]
 	return c, d
 
 @Urutu("CU")
@@ -51,6 +52,7 @@ def addsub(a,b,e,f):
 	__shared is x , y
 	x = a[0:100]
 	y = b[0:100]
+	t, u, v, w = 11, 11.0, 'cuda', "cu.da"
 	e[tx] = x[tx] + y[tx]
 	f[tx] = x[tx] - y[tx]
 	return e, f
