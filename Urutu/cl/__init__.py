@@ -83,6 +83,8 @@ class cl_test:
 
 	def inspect_it(self, sentence):
 		phrase = sentence.split('\t')
+		if phrase.count('#') > 0:
+			return
 		tab = phrase.count('')
 		if tab > self.tabs:
 			for j in range(tab - self.tabs):
