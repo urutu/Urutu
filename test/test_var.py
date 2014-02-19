@@ -14,7 +14,7 @@ def divmul(a,b,c,d):
 def addsub(a,b,e,f):
 	Tx, Ty, Tz = 100, 1, 1
 	Bx, By, Bz = 1, 1, 1
-	w, x, y, z = 10, 1.2, 'cu.da', "c.cuda"
+	w, x, y, z = 10, 1.2, 'cu.da', "c.uda"
 	e[tx] = a[tx] + b[tx]
 	f[tx] = a[tx] - b[tx]
 	return e, f
