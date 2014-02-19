@@ -16,7 +16,7 @@ def divmul(a,b,c,d):
 def addsub(a,b,e,f):
 	Tx, Ty, Tz = 100, 1, 1
 	Bx, By, Bz = 1, 1, 1
-	__globa is x , y
+	__global is x , y
 	x = a[0:100]
 	y = b[0:100]
 	e[tx] = x[tx] + y[tx]
