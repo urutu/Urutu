@@ -3,7 +3,7 @@
 # Mail: pyurutu@gmail.com
 # This file contains the execution of OpenCL code using PyOpenCL
 # This file converts Python code to CUDA code
-# Modified: 10 Feb 2014
+# Modified: 20 Feb 2014
 
 import inspect,shlex
 import numpy as np
@@ -15,10 +15,10 @@ class cu_test:
 	var_nam = []
 	var_val = []
 	kernel = "/**/"
-	threads = []
-	blocks = []
-	threads_dec = False
-	blocks_dec = False
+	threads = [1, 1, 1]
+	threads_dec = [False, False, False]
+	blocks = [1, 1, 1]
+	blocks_dec = [False, False, False]
 	func_name = []
 	code = ""
 	args = []
@@ -37,6 +37,13 @@ class cu_test:
 		sh = shlex.shlex(stri)
 		self.code = stri
 		self.args = args
+		if type(self.args[0]) is list and type(self.args[1]) is not list:
+			self.threads = self.args[0]
+			self.args = self.args[1:]
+		if type(self.args[0]) is list and type(self.args[1]) is list:
+			self.threads = self.args[0]
+			self.blocks = self.args[1]
+			self.args = self.args[2:]
 		self.typeargs()
 
 	def decarrays(self, phrase):
@@ -101,15 +108,19 @@ class cu_test:
 		while i is not sh.eof:
 			stmt.append(i)
 			i = sh.get_token()
-		if self.threads_dec == False:
+		if stmt.count('Tx') == 1 or stmt.count('Ty') == 1 or stmt.count('Tz') == 1:
 			self.threads_decl(stmt)
 			return
-		if self.blocks_dec == False:
+		if stmt.count('Bx') == 1 or stmt.count('By') == 1 or stmt.count('Bz') == 1:
 			self.blocks_decl(stmt)
 			return
 		if stmt[0] == '__global' or stmt[0] == '__shared' or stmt[0] == '__register' or stmt[0] == '__constant' :
 			self.decarrays(stmt)
 			return
+		if stmt.count('tx') > 0 or stmt.count('ty') > 0 or stmt.count('tz') > 0:
+			self.threadid_dec(stmt)
+		if stmt.count('bx') > 0 or stmt.count('bx') > 0 or stmt.count('bz') > 0:
+			self.blockid_dec(stmt)
 		if stmt.count('if') > 0:
 #			print "Going into IF... AKA void!"
 			return
@@ -117,6 +128,36 @@ class cu_test:
 			self.checkvars(stmt,phrase[-1])
 			return
 #		print stmt, self.tabs
+
+	def threadid_dec(self,stmt):
+		if stmt.count('tx') > 0 and self.threads_dec[0] == False:
+			string = "int tx = threadIdx.x;\n"
+			self.kernel = self.kernel + string
+			self.threads_dec[0] = True
+		if stmt.count('ty') > 0 and self.threads_dec[1] == False:
+			string = "int ty = threadIdx.y;\n"
+			self.kernel = self.kernel + string
+			self.threads_dec[1] = True
+		if stmt.count('tz') > 0 and self.threads_dec[2] == False:
+			string = "int tz = threadIdx.z;\n"
+			self.kernel = self.kernel + string
+			self.threads_dec[2] = True
+		return
+
+	def blockid_dec(self,stmt):
+		if stmt.count('bx') > 0 and self.blocks_dec[0] == False:
+			string = "int bx = blockIdx.x;\n"
+			self.kernel = self.kernel + string
+			self.blocks_dec[0] = True
+		if stmt.count('by') > 0 and self.blocks_dec[1] == False:
+			string = "int by = blockIdx.y;\n"
+			self.kernel = self.kernel + string
+			self.blocks_dec[1] = True
+		if stmt.count('bz') > 0 and self.blocks_dec[2] == False:
+			string = "int by = blockIdx.y;\n"
+			self.kernel = self.kernel + string
+			self.blocks_dec[2] = True
+		return
 
 #	__constant here!!
 	def decconstant(self, stmt):
@@ -271,56 +312,40 @@ class cu_test:
 			pos_val = stmt[pos + 1 + equ]
 			self.var_nam.append(stmt[pos])
 			self.var_val.append(int(pos_val))
-			string = "int tx = threadIdx.x;\n"
-			self.threads.append(int(pos_val))
-			self.kernel = self.kernel + string
+			self.threads[0] = int(pos_val)
 		if self.var_nam.count('Ty') < 1 and stmt.count('Ty') == 1:
 			pos = stmt.index('Ty')
 			pos_val = stmt[pos + 1 + equ]
 			self.var_nam.append(stmt[pos])
 			self.var_val.append(int(pos_val))
-			string = "int ty = threadIdx.y;\n"
-			self.threads.append(int(pos_val))
-			self.kernel = self.kernel + string
+			self.threads[1] = int(pos_val)
 		if self.var_nam.count('Tz') < 1 and stmt.count('Tz') == 1:
 			pos = stmt.index('Tz')
 			pos_val = stmt[pos + 1 + equ]
 			self.var_nam.append(stmt[pos])
 			self.var_val.append(int(pos_val))
-			string = "int tz = threadIdx.z;\n"
-			self.threads.append(int(pos_val))
-			self.kernel = self.kernel + string
-		if len(self.threads) == 3:
-			self.threads_dec = True
+			self.threads[2] = int(pos_val)
 
 	def blocks_decl(self, stmt):
 		equ = stmt.index('=')
-		if self.var_nam.count('Bx') < 1 and stmt.count('Bx') == 1:
+		if self.var_nam.count('Bx') < 1:
 			pos = stmt.index('Bx')
 			pos_val = stmt[pos + 1 + equ]
 			self.var_nam.append(stmt[pos])
 			self.var_val.append(int(pos_val))
-			string = "int bx = blockIdx.x;\n"
-			self.blocks.append(int(pos_val))
-			self.kernel = self.kernel + string
-		if self.var_nam.count('By') < 1 and stmt.count('By') == 1:
+			self.blocks[0] = int(pos_val)
+		if self.var_nam.count('By') < 1:
 			pos = stmt.index('By')
 			pos_val = stmt[pos + 1 + equ]
 			self.var_nam.append(stmt[pos])
 			self.var_val.append(int(pos_val))
-			string = "int by = blockIdx.y;\n"
-			self.blocks.append(int(pos_val))
-			self.kernel = self.kernel + string
-		if self.var_nam.count('Bz') < 1 and stmt.count('Bz') == 1:
+			self.blocks[1] = int(pos_val)
+		if self.var_nam.count('Bz') < 1:
 			pos = stmt.index('Bz')
 			pos_val = stmt[pos + 1 + equ]
 			self.var_nam.append(stmt[pos])
 			self.var_val.append(int(pos_val))
-			string = "int bz = blockIdx.z;\n"
-			self.blocks.append(int(pos_val))
-			self.kernel = self.kernel + string
-		if len(self.blocks) == 3:
-			self.blocks_dec = True
+			self.blocks[2] = int(pos_val)
 
 	def defargs(self,comma,control):
 		if self.arguments.count(self.keys[control]) < 2:
@@ -398,8 +423,6 @@ class cu_test:
 		print self.kernel
 		print self.threads
 		print self.blocks
-		print self.threads_dec
-		print self.blocks_dec
 		print self.func_name
 		print self.code
 		print self.words
