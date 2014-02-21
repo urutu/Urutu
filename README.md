@@ -53,7 +53,7 @@ def addsub(a, b, e, f):
 	return e, f
 
 a = np.random.randint(10, size = 100)
-b = np.random.randint(10,size = 100)
+b = np.random.randint(10, size = 100)
 c = np.array(a, dtype = 'f')
 d = np.empty_like(a)
 e = np.empty_like(a)
