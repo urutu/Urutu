@@ -5,22 +5,18 @@ import numpy as np
 def divmul(a, b, c, d):
 	Tx, Ty, Tz = 100, 1, 1
 	Bx, By, Bz = 1, 1, 1
-	__shared is x , y
-	x = a[0:100]
-	y = b[0:100]
-	c[tx] = x[tx] / y[tx]
-	d[tx] = x[tx] * y[tx]
+#	x, y, z = 1, 1.0, "OpenCL"
+	c[tx] = a[tx] / b[tx]
+	d[tx] = a[tx] * b[tx]
 	return c, d
 
 @Urutu("CU")
 def addsub(a, b, e, f):
 	Tx, Ty, Tz = 100, 1, 1
 	Bx, By, Bz = 1, 1, 1
-	__shared is x , y
-	x = a[0:100]
-	y = b[0:100]
-	e[tx] = x[tx] + y[tx]
-	f[tx] = x[tx] - y[tx]
+#	x, y, z = 2, 2.0, "CUDA"
+	e[tx] = a[tx] + b[tx]
+	f[tx] = a[tx] - b[tx]
 	return e, f
 
 a = np.random.randint(10, size = 100)
