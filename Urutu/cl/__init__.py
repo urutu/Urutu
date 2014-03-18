@@ -8,7 +8,7 @@
 import inspect,shlex
 import numpy as np
 import execl
-import threads, blocks, declare
+import threads, blocks, declare, grammar
 
 class cl_test:
 	arguments = []
@@ -131,8 +131,10 @@ class cl_test:
 			self.decarrays(stmt)
 			return
 		if stmt.count('if') > 0:
-#			print "Going into IF... AKA void!"
+			self.kernel = self.kernel + grammar._if.__init__(stmt, self.kernel)
 			return
+		if stmt.count('else') > 0:
+			self.kernel = self.kernel + "else"
 		else:
 			self.checkvars(stmt,phrase[-1])
 			return

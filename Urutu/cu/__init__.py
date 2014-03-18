@@ -8,7 +8,7 @@
 import inspect,shlex
 import numpy as np
 import execu
-import threads, blocks, declare
+import threads, blocks, declare, grammar
 
 class cu_test:
 	arguments = []
@@ -131,8 +131,10 @@ class cu_test:
 			self.decarrays(stmt)
 			return
 		if stmt.count('if') > 0:
-#			print "Going into IF... AKA void!"
+			self.kernel = self.kernel + grammar._if.__init__(stmt, self.kernel)
 			return
+		if stmt.count('else') > 0:
+			self.kernel = self.kernel + "else"
 		else:
 			self.checkvars(stmt,phrase[-1])
 			return
@@ -279,7 +281,7 @@ class cu_test:
 		self.sentences = self.code.split("\n")
 		self.body()
 		self.kernel = self.kernel + "}"
-#		self.print_cu()
+		self.print_cu()
 		tmp = execu.cu_exe()
 		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
 
