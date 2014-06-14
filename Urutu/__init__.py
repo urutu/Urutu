@@ -1,7 +1,6 @@
 # Developed by Aditya Atluri
 # Date: 18 Jan 2014
 # Mail: pyurutu@gmail.com
-# This file contains the execution of OpenCL code using PyOpenCL
 # Modified: 9 Feb 2014
 
 from cl import cl_test

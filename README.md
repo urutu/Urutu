@@ -1,7 +1,12 @@
 [Urutu](http://urutu.github.io)
 =======
 
-A GPU based parallel programming library for Python
+A Python based parallel programming library for GPUs
+
+About
+-----
+
+Urutu integrates CUDA and OpenCL into a single code. That is, write a single code in Python run it using CUDA or OpenCL or both. It is portable to different hardware and operating systems.
 
 System Requirements
 -------------------
