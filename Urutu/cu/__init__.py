@@ -131,7 +131,7 @@ class cu_test:
 
 
 	def inspect_it(self,sentence,kernel):
-#		print "Inside inspect_it()",sentence
+#		print "Inside inspect_it()",sentence,kernel
 		phrase = sentence.split('\t')
 		if phrase.count('#') > 0:
 			return
@@ -339,7 +339,7 @@ class cu_test:
 
 #	CHECKVARS here!!
 	def checkvars(self,stmt,phrase,kernel):
-#		print "Inside Check Vars",phrase, stmt
+#		print "Inside Check Vars",phrase, stmt, kernel
 		if self.__shared.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
 			kernel, self.var_nam, self.type_vars = declare.decshared(stmt, self.type_vars, self.var_nam, self.args, kernel)
 			return kernel
@@ -387,8 +387,8 @@ class cu_test:
 					if self.device_sentences[0] == []:
 						self.device_sentences.pop(0)
 #					print "Body!!", self.device_py, self.device_sentences
-				else:
-					self.kernel = self.inspect_it(sentence,self.kernel)
+			else:
+				self.kernel = self.inspect_it(sentence,self.kernel)
 		return
 
 
