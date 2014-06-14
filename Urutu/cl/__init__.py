@@ -131,7 +131,7 @@ class cl_test:
 			self.decarrays(stmt)
 			return
 		if stmt.count('if') > 0:
-			self.kernel = self.kernel + grammar._if.__init__(stmt, self.kernel)
+			self.kernel = self.kernel + grammar.keyword(stmt, self.kernel)
 			return
 		if stmt.count('else') > 0:
 			self.kernel = self.kernel + "else"

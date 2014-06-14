@@ -180,7 +180,7 @@ class cu_test:
 			self.decarrays(stmt)
 			return kernel
 		if stmt.count('if') > 0:
-			return kernel + grammar._if.__init__(stmt, kernel)
+			return kernel + grammar.keyword(stmt, kernel)
 		if stmt.count('else') > 0:
 			kernel = kernel + "else"
 		else:
