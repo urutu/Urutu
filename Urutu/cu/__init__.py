@@ -131,7 +131,7 @@ class cu_test:
 
 
 	def inspect_it(self,sentence,kernel):
-		print "Inside inspect_it()",sentence,kernel
+#		print "Inside inspect_it()",sentence,kernel
 		phrase = sentence.split('\t')
 		if phrase.count('#') > 0:
 			return
@@ -304,7 +304,7 @@ class cu_test:
 
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase,kernel):
-		print "Inside Dec vars",kernel,phrase,stmt
+#		print "Inside Dec vars",kernel,phrase,stmt
 		if kernel[-2] == '}':
 			kernel = kernel[:-2]
 #			kernel += "\n"
@@ -339,7 +339,7 @@ class cu_test:
 
 #	CHECKVARS here!!
 	def checkvars(self,stmt,phrase,kernel):
-		print "Inside Check Vars",phrase, stmt, kernel
+#		print "Inside Check Vars",phrase, stmt, kernel
 		if self.__shared.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
 			kernel, self.var_nam, self.type_vars = declare.decshared(stmt, self.type_vars, self.var_nam, self.args, kernel)
 			return kernel
