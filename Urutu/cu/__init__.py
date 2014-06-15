@@ -387,8 +387,8 @@ class cu_test:
 					if self.device_sentences[0] == []:
 						self.device_sentences.pop(0)
 #					print "Body!!", self.device_py, self.device_sentences
-			else:
-				self.kernel = self.inspect_it(sentence,self.kernel)
+				else:
+					self.kernel = self.inspect_it(sentence,self.kernel)
 		return
 
 
@@ -471,6 +471,7 @@ class cu_test:
 #		print self.kernel, "Entering body()"
 		self.body()
 		self.kernel = self.kernel + "}"
+		print self.kernel
 #		self.print_cu()
 		tmp = execu.cu_exe()
 		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
