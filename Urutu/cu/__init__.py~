@@ -471,7 +471,7 @@ class cu_test:
 #		print self.kernel, "Entering body()"
 		self.body()
 		self.kernel = self.kernel + "}"
-#		print self.kernel
+		print self.kernel
 #		self.print_cu()
 		tmp = execu.cu_exe()
 		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
