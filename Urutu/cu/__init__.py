@@ -197,14 +197,14 @@ class cu_test:
 #		print "Device Keys",device_keys
 		is_dyn_parallel = False
 		if stmt[stmt.index("(")+1] == "[" and stmt[stmt.index("(")+9] == "[":
-			print "Dynamic Parallelism"
+#			print "Dynamic Parallelism"
 			thread_index = stmt.index('(') + 1
 			self.device_num_threads = [stmt[thread_index+1], stmt[thread_index+3], stmt[thread_index+5]]
 			block_index = thread_index + 8
 			self.device_num_blocks = [stmt[block_index+1], stmt[block_index+3], stmt[block_index+5]]
-			print self.device_num_threads , self.device_num_blocks
+#			print self.device_num_threads , self.device_num_blocks
 			stmt = stmt[:thread_index] + stmt[block_index+8:]
-			print stmt
+#			print stmt
 			is_dyn_parallel = True
 		self.device_funcname(stmt[:],device_keys[device_keys.index('(')+1:device_keys.index(')')],True,is_dyn_parallel)
 #		print self.device_body_buff
@@ -494,7 +494,7 @@ class cu_test:
 #		print self.kernel, "Entering body()"
 		self.body()
 		self.kernel = self.kernel + "}"
-		print self.kernel
+#		print self.kernel
 #		self.print_cu()
 		tmp = execu.cu_exe()
 		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
