@@ -20,7 +20,7 @@ class cu_exe:
 		self.retl = len(returns)
 		self.allocargs()
 		self.htod()
-		mod=SourceModule(stringg)
+		mod=SourceModule(stringg, options=['-rdc=true','-lcudadevrt'])
 		func=mod.get_function(func_name)
 		if self.argl == 1:
 			func(self.cu_args[0],block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]))
