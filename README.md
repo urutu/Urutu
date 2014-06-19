@@ -23,7 +23,10 @@ Setup
 ```shell
 sudo pip install Urutu
 ```
-
+For installing with Python 3, install PyCUDA and PyOpenCL with Python 3. Then, clone this repository and use
+```shell
+$ 2to3 -w Urutu
+```
 =======
 
 Sample Code
