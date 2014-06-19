@@ -23,7 +23,10 @@ Setup
 ```shell
 sudo pip install Urutu
 ```
-
+For installing with Python 3, install PyCUDA and PyOpenCL with Python 3. Then, clone this repository and use
+```shell
+$ 2to3 -w Urutu
+```
 =======
 
 Sample Code
@@ -35,8 +38,6 @@ import numpy as np
 
 @Urutu("CL")
 def divmul(a, b, c, d):
-	Tx, Ty, Tz = 100, 1, 1
-	Bx, By, Bz = 1, 1, 1
 	__global is x, y
 	x = a[0:100]
 	y = b[0:100]
@@ -47,8 +48,6 @@ def divmul(a, b, c, d):
 
 @Urutu("CU")
 def addsub(a, b, e, f):
-	Tx, Ty, Tz = 100, 1, 1
-	Bx, By, Bz = 1, 1, 1
 	__shared is x , y
 	x = a[0:100]
 	y = b[0:100]
@@ -66,6 +65,6 @@ f = np.empty_like(a)
 
 print "The Array A is: \n", a
 print "The Array B is: \n", b
-print "Running on OpenCL.. \n", divmul(a, b, c, d)
-print "Running on CUDA.. \n", addsub(a, b, e, f)
+print "Running on OpenCL.. \n", divmul([100,1,1], [1,1,1], a, b, c, d)
+print "Running on CUDA.. \n", addsub([100,1,1], [1,1,1], a, b, e, f)
 ```

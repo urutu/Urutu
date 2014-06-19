@@ -48,6 +48,8 @@ class cu_test:
 	device_sentences = [[]]
 	device_threads_dec = [False,False,False]
 	device_blocks_dec = [False, False, False]
+	device_num_threads = []
+	device_num_blocks = []
 	def __init__(self, fn, args):
 		stri = inspect.getsource(fn)
 		sh = shlex.shlex(stri)
@@ -180,7 +182,7 @@ class cu_test:
 			self.decarrays(stmt)
 			return kernel
 		if stmt.count('if') > 0:
-			return kernel + grammar._if.__init__(stmt, kernel)
+			return kernel + grammar.keyword(stmt, kernel)
 		if stmt.count('else') > 0:
 			kernel = kernel + "else"
 		else:
@@ -193,34 +195,55 @@ class cu_test:
 		device_keys = self.device_py[index]
 		self.device_scope = True
 #		print "Device Keys",device_keys
-		if stmt[stmt.index("(")+1] == "[" and stmt[stmt.index("(")+3] == "]":
-			print "Dynamic Parallelism"
-		else:
-			self.device_funcname(stmt[:],device_keys[device_keys.index('(')+1:device_keys.index(')')],True)
-#			print self.device_body_buff
-#			print "Inititiate threads"
+		is_dyn_parallel = False
+		if stmt[stmt.index("(")+1] == "[" and stmt[stmt.index("(")+9] == "[":
+#			print "Dynamic Parallelism"
+			thread_index = stmt.index('(') + 1
+			self.device_num_threads = [stmt[thread_index+1], stmt[thread_index+3], stmt[thread_index+5]]
+			block_index = thread_index + 8
+			self.device_num_blocks = [stmt[block_index+1], stmt[block_index+3], stmt[block_index+5]]
+#			print self.device_num_threads , self.device_num_blocks
+			stmt = stmt[:thread_index] + stmt[block_index+8:]
 #			print stmt
-			index = self.device_func_name.index(name)
-			for i in self.device_sentences[index]:
-				self.device_body_buff = self.declare_workitems(i,self.device_body_buff)
-#			print "Inside CREATING DEVICE BODY"
-			for i in self.device_sentences[index]:
-				self.device_body_buff = self.inspect_it(i,self.device_body_buff)
-#			print self.device_body_buff
+			is_dyn_parallel = True
+		self.device_funcname(stmt[:],device_keys[device_keys.index('(')+1:device_keys.index(')')],True,is_dyn_parallel)
+#		print self.device_body_buff
+#		print "Inititiate threads"
+#		print stmt
+		index = self.device_func_name.index(name)
+		for i in self.device_sentences[index]:
+			self.device_body_buff = self.declare_workitems(i,self.device_body_buff)
+#		print "Inside CREATING DEVICE BODY"
+		for i in self.device_sentences[index]:
+			self.device_body_buff = self.inspect_it(i,self.device_body_buff)
+#		print self.device_body_buff
 		self.device_scope = False
 		self.kernel = self.device_body_buff + self.kernel
 		self.device_threads_dec = [False, False, False]
 		self.device_blocks_dec = [False, False, False]
+		if is_dyn_parallel == True:
+			return self.dyn_parallel(stmt,name)+";\n"
 		return self.stringize(stmt) + "; \n"
 
-	def device_funcname(self,stmt,args,device):
+	def dyn_parallel(self,stmt,name):
+		dimGrid = "dimGrid_"+str(name)
+		dimBlock = "dimBlock_"+str(name)
+		str_dec_blocks = "dim3 " + dimGrid + '(' + str(self.device_num_blocks[0]) + ',' + str(self.device_num_blocks[1]) + ',' + str(self.device_num_blocks[2]) + ");\n"
+		str_dec_threads = "dim3 " + dimBlock + '(' + str(self.device_num_threads[0]) + ',' + str(self.device_num_threads[1]) + ',' + str(self.device_num_threads[2]) + ");\n"
+		str_dyn_first = str(name) + '<<<' + dimGrid + ',' + dimBlock + '>>>'
+		str_dyn_last = ""
+		for i in stmt[1:]:
+			str_dyn_last += str(i)
+		return str_dec_blocks+str_dec_threads+str_dyn_first+str_dyn_last
+
+	def device_funcname(self,stmt,args,device,is_dyn_parallel):
 #		print "Inside device_funcname: ", stmt
 		while ',' in args:
 			args.remove(',')
-		if device == True:
-			self.device_body_buff = "__device__ "
-		else:
+		if is_dyn_parallel == True:
 			self.device_body_buff = "__global__ "
+		elif device == True:
+			self.device_body_buff = "__device__ "
 		index = stmt.index("(")
 		tmp = " " + str(stmt[index-1]) + "("
 		if self.device_func_name.count(stmt[0]) == 1:
@@ -387,8 +410,8 @@ class cu_test:
 					if self.device_sentences[0] == []:
 						self.device_sentences.pop(0)
 #					print "Body!!", self.device_py, self.device_sentences
-			else:
-				self.kernel = self.inspect_it(sentence,self.kernel)
+				else:
+					self.kernel = self.inspect_it(sentence,self.kernel)
 		return
 
 
@@ -471,6 +494,7 @@ class cu_test:
 #		print self.kernel, "Entering body()"
 		self.body()
 		self.kernel = self.kernel + "}"
+#		print self.kernel
 #		self.print_cu()
 		tmp = execu.cu_exe()
 		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
