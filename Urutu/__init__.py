@@ -1,7 +1,7 @@
 # Developed by Aditya Atluri
 # Date: 18 Jan 2014
 # Mail: pyurutu@gmail.com
-# Modified: 9 Feb 2014
+# Modified: 27 Jun 2014
 
 from cl import cl_test
 from cu import cu_test
@@ -18,6 +18,7 @@ def Urutu(arg):
 			elif arg == "gpu":
 				try:
 					import pycuda
+					print "Running on CUDA"
 					cu_ = cu.cu_test(fn,args)
 					return cu_.execute()
 				except:
@@ -25,6 +26,7 @@ def Urutu(arg):
 					print "Switching to OpenCL"
 					try:
 						import pyopencl
+						print "Running on OpenCL"
 						cl_ = cl.cl_test(fn,args)
 						return cl_.execute()
 					except:
