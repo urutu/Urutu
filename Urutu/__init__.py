@@ -18,15 +18,19 @@ def Urutu(arg):
 			elif arg == "gpu":
 				try:
 					import pycuda
-					print "Imported PyCUDA"
+					cu_ = cu.cu_test(fn,args)
+					return cu_.execute()
 				except:
-					print "Unable to import PyCUDA"
+					print "CUDA API not supported on this machine"
+					print "Switching to OpenCL"
 					try:
 						import pyopencl
+						cl_ = cl.cl_test(fn,args)
+						return cl_.execute()
 					except:
 						print "Unable to import PyOpenCL"
 			else:
-				print "Not working!!"
+				print "CUDA and OpenCL APIs are not found in this machine."
 				return
 		return inner
 	return wrap
