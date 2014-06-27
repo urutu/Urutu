@@ -21,11 +21,16 @@ Setup
 ------
 
 ```shell
-sudo pip install Urutu
+$ git clone https://github.com/urutu/Urutu.git
+$ cd Urutu
+$ sudo python2 setup.py install
 ```
 For installing with Python 3, install PyCUDA and PyOpenCL with Python 3. Then, clone this repository and use
 ```shell
+$ git clone https://github.com/urutu/Urutu.git
 $ 2to3 -w Urutu
+$ cd Urutu
+$ sudo python3 setup.py install
 ```
 =======
 
