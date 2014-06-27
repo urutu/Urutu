@@ -15,6 +15,16 @@ def Urutu(arg):
 			elif arg == "CU":
 				cu_ = cu.cu_test(fn,args)
 				return cu_.execute()
+			elif arg == "gpu":
+				try:
+					import pycuda
+					print "Imported PyCUDA"
+				except:
+					print "Unable to import PyCUDA"
+					try:
+						import pyopencl
+					except:
+						print "Unable to import PyOpenCL"
 			else:
 				print "Not working!!"
 				return
