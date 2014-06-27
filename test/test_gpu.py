@@ -33,4 +33,4 @@ f = np.array(a, dtype = 'd')
 
 print "The Array A is: \n", a
 print "The Array B is: \n", b
-print "Running on CUDA.. \n", math([100,1,1],[100,1,1],a, b, c, d, e, f)
+print "Running on GPU.. \n", math([100,1,1],[100,1,1],a, b, c, d, e, f)
