@@ -50,6 +50,7 @@ class cu_test:
 	device_blocks_dec = [False, False, False]
 	device_num_threads = []
 	device_num_blocks = []
+	device_dyn_p = False
 	def __init__(self, fn, args):
 		stri = inspect.getsource(fn)
 		sh = shlex.shlex(stri)
@@ -206,6 +207,7 @@ class cu_test:
 			stmt = stmt[:thread_index] + stmt[block_index+8:]
 #			print stmt
 			is_dyn_parallel = True
+			self.device_dyn_p = True
 		self.device_funcname(stmt[:],device_keys[device_keys.index('(')+1:device_keys.index(')')],True,is_dyn_parallel)
 #		print self.device_body_buff
 #		print "Inititiate threads"
@@ -497,7 +499,7 @@ class cu_test:
 #		print self.kernel
 #		self.print_cu()
 		tmp = execu.cu_exe()
-		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
+		return tmp.exe_cu(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns, self.device_dyn_p)
 
 	def print_cu(self):
 		print "In print_cu:"

@@ -14,13 +14,16 @@ class cu_exe:
 	args = []
 	argl = 0
 	retl = 0
-	def exe_cu(self,stringg,func_name,threads,blocks,args,returns):
+	def exe_cu(self,stringg,func_name,threads,blocks,args,returns,dyn_p):
 		self.args = args
 		self.argl = len(args)
 		self.retl = len(returns)
 		self.allocargs()
 		self.htod()
-		mod=SourceModule(stringg, options=['-rdc=true','-lcudadevrt'])
+		if dyn_p is True:
+			mod=SourceModule(stringg, options=['-rdc=true','-lcudadevrt'])
+		else:
+			mod=SourceModule(stringg)
 		func=mod.get_function(func_name)
 		if self.argl == 1:
 			func(self.cu_args[0],block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]))
