@@ -4,9 +4,7 @@
 # This file contains the execution of CUDA code using PyCUDA
 # Modified: 18 Jan 2014
 
-import pycuda.driver as cuda
-import pycuda.autoinit
-from pycuda.compiler import SourceModule
+
 import numpy
 
 class cu_exe:
@@ -20,6 +18,12 @@ class cu_exe:
 		self.retl = len(returns)
 		self.allocargs()
 		self.htod()
+		try:
+			import pycuda.driver as cuda
+			import pycuda.autoinit
+			from pycuda.compiler import SourceModule
+		except:
+			return
 		if dyn_p is True:
 			mod=SourceModule(stringg, options=['-rdc=true','-lcudadevrt'])
 		else:
