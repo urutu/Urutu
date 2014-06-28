@@ -9,6 +9,14 @@ from cu import cu_test
 def Urutu(arg):
 	def wrap(fn):
 		def inner(*args,**kargs):
+			def import_opencl():
+				pyopencl = False
+				try:
+					import pyopencl
+					pyopencl = True
+				except:
+					pyopencl = False
+				return pyopencl
 			if arg == "CL":
 				cl_ = cl.cl_test(fn,args)
 				return cl_.execute()
@@ -24,14 +32,14 @@ def Urutu(arg):
 				except:
 					print "CUDA is not found on this machine"
 					print "Switching to OpenCL..."
-					try:
-						import pyopencl
+					if import_opencl():
 						cl__ = cl.cl_test(fn,args)
+						print "PyOpenCL"
 						return cl__.execute()
-					except:
+					else:
 						print "CUDA and OpenCL are not found on this machine"
-				else:
-					print "CUDA and OpenCL APIs are not found in this machine."
-					return
+			else:
+				print "CUDA and OpenCL APIs are not found in this machine."
+				return
 		return inner
 	return wrap
