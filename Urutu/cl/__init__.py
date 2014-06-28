@@ -472,7 +472,7 @@ class cl_test:
 		self.sentences.remove(self.sentences[-2])
 #		print self.kernel, "Entering body()"
 		self.body()
-		self.kernel = "#pragma OPENCL EXTENSION all : enable\n"+self.kernel + "}"
+		self.kernel = "#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n"+self.kernel + "}"
 #		self.print_cl()
 #		print self.var_nam, self.type_vars, self.__shared, self.__global
 #		print self.kernel
@@ -493,4 +493,3 @@ class cl_test:
 		print self.code
 		print self.words
 		print self.sentences
-
