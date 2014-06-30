@@ -62,13 +62,19 @@ class cu_exe:
 			return self.args[self.argl - self.retl], self.args[self.argl - self.retl + 1], self.args[self.argl - self.retl + 2], self.args[self.argl - self.retl + 3]
 
 	def allocargs(self):
+		import pycuda.driver as cuda
+		import pycuda.autoinit
 		for arg in self.args:
 			self.cu_args.append(cuda.mem_alloc(arg.nbytes))
 
 	def htod(self):
+		import pycuda.driver as cuda
+		import pycuda.autoinit
 		for i in range(self.argl-self.retl):
 			cuda.memcpy_htod(self.cu_args[i],self.args[i])
 
 	def dtoh(self):
+		import pycuda.driver as cuda
+		import pycuda.autoinit
 		for i in range(self.retl):
 			cuda.memcpy_dtoh(self.args[self.argl-self.retl+i],self.cu_args[self.argl-self.retl+i])
