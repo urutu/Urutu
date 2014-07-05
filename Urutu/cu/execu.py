@@ -25,7 +25,7 @@ class cu_exe:
 		except:
 			return
 		if dyn_p is True:
-			mod=SourceModule(stringg, options=['-rdc=true','-lcudadevrt'])
+			mod=SourceModule(stringg, options=['-rdc=true'],linkers=['-lcudadevrt'])
 		else:
 			mod=SourceModule(stringg)
 		func=mod.get_function(func_name)
