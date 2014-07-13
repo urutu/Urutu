@@ -76,7 +76,7 @@ print "Running on CUDA.. \n", addsub([100,1,1], [1,1,1], a, b, e, f)
 Keywords made available
 --------------------------
 ```python
-and     elif    from    import  or
-as      else    if      in      print
-def     for     is      not     return
+and     elif    if      not
+as      else    in      or
+def     for     is      return
 ```
