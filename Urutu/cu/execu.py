@@ -4,7 +4,6 @@
 # This file contains the execution of CUDA code using PyCUDA
 # Modified: 18 Jan 2014
 
-
 import numpy
 
 class cu_exe:
@@ -12,18 +11,24 @@ class cu_exe:
 	args = []
 	argl = 0
 	retl = 0
-	def exe_cu(self,stringg,func_name,threads,blocks,args,returns,dyn_p):
-		self.args = args
-		self.argl = len(args)
-		self.retl = len(returns)
-		self.allocargs()
-		self.htod()
+	returns = []
+	nam_returns = []
+	arg_nam = []
+	id_ret_args = []
+	id_ret_ret = []
+	def exe_cu(self,stringg,func_name,threads,blocks,args,returns,dyn_p,arg_nam):
 		try:
 			import pycuda.driver as cuda
 			import pycuda.autoinit
 			from pycuda.compiler import SourceModule
 		except:
 			return
+		self.args = args
+		self.nam_returns = returns
+		self.argl = len(args)
+		self.retl = len(returns)
+		self.arg_nam = arg_nam
+		self.allocargs()
 		if dyn_p is True:
 			mod=SourceModule(stringg, options=['-rdc=true'],linkers=['-lcudadevrt'])
 		else:
@@ -50,31 +55,35 @@ class cu_exe:
 		elif self.argl == 10:
 			func(self.cu_args[0],self.cu_args[1],self.cu_args[2],self.cu_args[3],self.cu_args[4],self.cu_args[5],self.cu_args[6],self.cu_args[7],self.cu_args[8],self.cu_args[9],block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]))
 		self.dtoh()
-		if self.retl == 0:
-			return
-		elif self.retl == 1:
-			return self.args[self.argl - self.retl]
-		elif self.retl == 2:
-			return self.args[self.argl - self.retl], self.args[self.argl - self.retl + 1]
-		elif self.retl == 3:
-			return self.args[self.argl - self.retl], self.args[self.argl - self.retl + 1], self.args[self.argl - self.retl + 2]
-		elif self.retl == 4:
-			return self.args[self.argl - self.retl], self.args[self.argl - self.retl + 1], self.args[self.argl - self.retl + 2], self.args[self.argl - self.retl + 3]
+		self.dfree()
+		return self.returns
 
 	def allocargs(self):
 		import pycuda.driver as cuda
 		import pycuda.autoinit
-		for arg in self.args:
-			self.cu_args.append(cuda.mem_alloc(arg.nbytes))
+		for i in self.arg_nam:
+			ind = self.arg_nam.index(i)
+			if self.nam_returns.count(i) == 1:
+				self.id_ret_ret.append(self.nam_returns.index(i))
+				self.id_ret_args.append(self.arg_nam.index(i))
+				self.returns.append(self.args[self.id_ret_args[-1]])
+				self.cu_args.append(cuda.mem_alloc(self.args[ind].nbytes))
+			else:
+				self.cu_args.append(cuda.mem_alloc(self.args[ind].nbytes))
+				cuda.memcpy_htod(self.cu_args[ind],self.args[ind])
 
-	def htod(self):
+	def dfree(self):
 		import pycuda.driver as cuda
 		import pycuda.autoinit
-		for i in range(self.argl-self.retl):
-			cuda.memcpy_htod(self.cu_args[i],self.args[i])
+		for arg in self.cu_args:
+			arg.free()
+			self.cu_args.pop(0)
 
 	def dtoh(self):
 		import pycuda.driver as cuda
 		import pycuda.autoinit
-		for i in range(self.retl):
-			cuda.memcpy_dtoh(self.args[self.argl-self.retl+i],self.cu_args[self.argl-self.retl+i])
+		for i in range(len(self.id_ret_ret)):
+			cuda.memcpy_dtoh(self.returns[self.id_ret_ret[i]],self.cu_args[self.id_ret_args[i]])
+
+
+# End of File
