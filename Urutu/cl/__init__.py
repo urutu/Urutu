@@ -13,6 +13,7 @@ import device
 
 class cl_test:
 	arguments = []
+	arg_nam = ['']
 	returns = []
 	var_nam = []
 	var_val = []
@@ -34,6 +35,7 @@ class cl_test:
 	__register = []
 	__constant = []
 	tabs = 0
+	count_def = 0
 	num_return = 0
 	count_return = 0
 	is_device_code = False
@@ -129,7 +131,6 @@ class cl_test:
 			kernel, self.device_blocks_dec[2] = blocks.bz(self.device_blocks_dec[2], kernel)
 		return kernel
 
-
 	def inspect_it(self,sentence,kernel):
 #		print "Inside inspect_it()",sentence,kernel
 		phrase = sentence.split('\t')
@@ -139,7 +140,7 @@ class cl_test:
 ##		if tab > self.tabs and tab != len(phrase):
 #			for j in range(tab - self.tabs):
 #				kernel = kernel + "{\n"
-		if tab < self.tabs and tab != len(phrase):
+		if tab < self.tabs:
 			for j in range(self.tabs - tab):
 				kernel = kernel + "}\n"
 		self.tabs = phrase.count('')
@@ -179,10 +180,15 @@ class cl_test:
 		if stmt[0] == '__global' or stmt[0] == '__shared' or stmt[0] == '__register' or stmt[0] == '__constant' :
 			self.decarrays(stmt)
 			return kernel
+		if stmt.count('for') > 0:
+			kernel += self._for(stmt, kernel)
+			return kernel
 		if stmt.count('if') > 0:
 			return kernel + grammar.keyword(stmt, kernel)
 		if stmt.count('else') > 0:
-			kernel = kernel + "else"
+			kernel = kernel + "else{\n "
+			self.tabs+=1
+			return kernel
 		else:
 #			print "Entering Checkvars"
 			return self.checkvars(stmt,phrase[-1],kernel)
@@ -401,42 +407,111 @@ class cl_test:
 				if "int64*" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + ", __global long* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "long*"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "int32*" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + ", __global int* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "int*"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "float32*" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + ", __global float* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "float*"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "float64*" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + ", __global double* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "double*"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "int" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + ", int " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "int"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "float" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + ", float " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "float"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 			elif comma == False:
 				if "int64*" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + " __global long* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "long*"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "int32*" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + " __global int* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "int*"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "float32*" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + " __global float* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "float*"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "float64*" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + " __global double* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "double*"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "int" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + " int " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "int"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 				elif "float" == self.type_args[len(self.arguments) - 1]:
 					kernel = kernel + " float " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "float"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
 			self.var_nam.append(self.keys[control])
 		return kernel
+
+	def _for(self, words, kernel):
+		iterator = words[1]
+		if words.count('range') > 0:
+			if words.count(',') == 0:
+				ind = words.index('(')
+				if words[ind+1] == "len":
+					str_for = "for(int " + str(iterator)
+					var_for = words[ind+3]
+					str_for += " = 0; " + str(iterator) + " < sizeof(" + str(var_for) + ")/sizeof(" + str(var_for) + "[0])"
+					if words[words[ind:].index(')')+ind+1] != ")":
+						ind_closed = words[ind+1:].index(")")+ind+2
+						print words[ind_closed]
+						ind_total_close = words[ind+1:].index(")")+ind_closed-1
+						print words[ind_total_close]
+						for i in range(ind_closed, ind_total_close):
+							str_for += str(words[i])
+						str_for += "; " + str(iterator) + "++){\n"
+						type_var_for = str(self.type_vars[self.var_nam.index(var_for)][:-1])
+						self.var_nam.append(str(iterator))
+						self.type_vars.append(type_var_for)
+				else:
+					str_for = "for(int " + str(iterator)
+					var_for = words[ind+3]
+					str_for += " = 0; " + str(iterator) + " < "
+					range_id = words.index("range")
+					end_id = words.index(":")
+					for i in range(range_id+1,end_id):
+						str_for += str(words[i])
+					str_for += "; " + str(iterator) + "++){\n"
+#					type_var_for = str(self.type_vars[self.var_nam.index(var_for)][:-1])
+#					self.var_nam.append(str(iterator))
+#					self.type_vars.append(type_var_for)
+#			if words.count(',')
+		else:
+			str_for = "for(int _" + str(iterator)
+			var_for = words[words.index('in')+1]
+			str_for += " = 0; " + "_"+str(iterator) + " < sizeof(" + str(var_for) + ")/sizeof(" + str(var_for) + "[0]); _" + str(iterator) + "++){\n"
+			type_var_for = str(self.type_vars[self.var_nam.index(var_for)][:-1])
+			str_for += type_var_for + " " + str(iterator) + " = " + str(var_for) + "[_" + str(iterator) + "];\n"
+			self.var_nam.append(str(iterator))
+			self.type_vars.append(type_var_for)
+#			print self.type_vars, self.var_nam
+		self.tabs += 1
+		return str_for
 
 	def execute(self):
 		sh = shlex.shlex(self.code)
@@ -472,12 +547,13 @@ class cl_test:
 		self.sentences.remove(self.sentences[-2])
 #		print self.kernel, "Entering body()"
 		self.body()
-		self.kernel = "#pragma OPENCL EXTENSION all : enable\n"+self.kernel + "}"
+		self.kernel = "#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n"+self.kernel + "}"
 #		self.print_cl()
 #		print self.var_nam, self.type_vars, self.__shared, self.__global
 #		print self.kernel
 		tmp = execl.cl_exe()
-		return tmp.exe_cl(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns)
+		self.arg_nam.pop(-1)
+		return tmp.exe_cl(self.kernel, self.func_name, self.threads, self.blocks, self.args, self.returns, self.arg_nam)
 
 	def print_cl(self):
 		print "In print_cl:"
@@ -493,4 +569,3 @@ class cl_test:
 		print self.code
 		print self.words
 		print self.sentences
-
