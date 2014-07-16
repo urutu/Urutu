@@ -13,10 +13,11 @@ class cu_exe:
 	retl = 0
 	returns = []
 	nam_returns = []
-	arg_nam = []
-	id_ret_args = []
-	id_ret_ret = []
+	nam_args = []
+	id_ret = []
+	is_alloc = []
 	def exe_cu(self,stringg,func_name,threads,blocks,args,returns,dyn_p,arg_nam):
+#		print stringg, func_name, threads,blocks,args,returns,dyn_p,arg_nam
 		try:
 			import pycuda.driver as cuda
 			import pycuda.autoinit
@@ -27,7 +28,8 @@ class cu_exe:
 		self.nam_returns = returns
 		self.argl = len(args)
 		self.retl = len(returns)
-		self.arg_nam = arg_nam
+		self.nam_args = arg_nam
+		self.flags()
 		self.allocargs()
 		if dyn_p is True:
 			mod=SourceModule(stringg, options=['-rdc=true'],linkers=['-lcudadevrt'])
@@ -58,19 +60,37 @@ class cu_exe:
 		self.dfree()
 		return self.returns
 
+	def initialize(self,args,nam_args):
+		self.args = args
+		self.nam_args = nam_args
+		for i in range(len(nam_args)):
+			self.cu_args.append([1])
+			self.is_alloc.append(False)
+
 	def allocargs(self):
 		import pycuda.driver as cuda
 		import pycuda.autoinit
-		for i in self.arg_nam:
-			ind = self.arg_nam.index(i)
+#		print self.is_alloc
+		for i in range(len(self.nam_args)):
+			if self.is_alloc[i] == False:
+				self.cu_args.append(cuda.mem_alloc(self.args[i].nbytes))
+				cuda.memcpy_htod(self.cu_args[i],self.args[i])
+
+	def discrete_alloc(self,var):
+		import pycuda.driver as cuda
+		import pycuda.autoinit
+		if self.nam_args.count(var) > 0:
+			i = self.nam_args.index(var)
+			self.cu_args.append(cuda.malloc(self.args[self.nam_args.index(var)]))
+			cuda.memcpy_htod(self.cu_args[i],self.args[i])
+			return self.cu_args[i]
+
+	def flags(self):
+		for i in self.nam_args:
+			self.is_alloc.append(False)
 			if self.nam_returns.count(i) == 1:
-				self.id_ret_ret.append(self.nam_returns.index(i))
-				self.id_ret_args.append(self.arg_nam.index(i))
-				self.returns.append(self.args[self.id_ret_args[-1]])
-				self.cu_args.append(cuda.mem_alloc(self.args[ind].nbytes))
-			else:
-				self.cu_args.append(cuda.mem_alloc(self.args[ind].nbytes))
-				cuda.memcpy_htod(self.cu_args[ind],self.args[ind])
+				self.id_ret.append(self.nam_args.index(i))
+#		print self.nam_args, self.id_ret, self.is_alloc
 
 	def dfree(self):
 		import pycuda.driver as cuda
@@ -82,8 +102,11 @@ class cu_exe:
 	def dtoh(self):
 		import pycuda.driver as cuda
 		import pycuda.autoinit
-		for i in range(len(self.id_ret_ret)):
-			cuda.memcpy_dtoh(self.returns[self.id_ret_ret[i]],self.cu_args[self.id_ret_args[i]])
+#		print self.id_ret, self.cu_args
+		for i in range(len(self.id_ret)):
+			self.returns.append(self.args[self.id_ret[i]])
+#			print self.args[i], self.returns[-1]
+			cuda.memcpy_dtoh(self.returns[i],self.cu_args[self.id_ret[i]])
 
 
 # End of File
