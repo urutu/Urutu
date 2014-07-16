@@ -24,7 +24,7 @@ class cu_test:
 	threads_dec = [False, False, False]
 	blocks = [1, 1, 1]
 	blocks_dec = [False, False, False]
-	func_name = []
+	global_func = []
 	code = ""
 	args = []
 	type_args = []
@@ -114,7 +114,7 @@ class cu_test:
 	def funcname_cu(self,control):
 		func_name = self.keys[control + 1]
 		self.kernel = self.kernel+"__global__ void " + func_name + "_1("
-		self.func_name.append(func_name+"_1")
+		self.global_func = func_name
 		self.count_def = 1
 		return control + 2
 #		Return whether it is pass by reference or 
@@ -197,22 +197,36 @@ class cu_test:
 			kernel = kernel + "else{\n"
 			return kernel
 		if stmt.count('Urmod') > 0:
-			self.modules.append(stmt)
+			self.modules.append(stmt[2:])
+			self.kernel_final.append(kernel+"}")
+			kernel = "__global__ void "+ self.global_func + "_" + str(len(self.modules)+1) + "(" + self.kernel_args + "){\n"
+			self.threads_dec = [False, False, False]
+			self.blocks_dec = [False, False, False]
+			self.kernel = kernel
+			return kernel
 		else:
 #			print "Entering Checkvars"
 			return self.checkvars(stmt,phrase[-1],kernel)
 #		print stmt, self.tabs
 
-	def Urmod(self,stmt):
+	def Urmod(self,stmt,cu_args):
 		id = stmt.index('(')
 		function = stmt[id-1]
 		module = stmt[id-3]
 		string_args = [""]
+		var = ""
 		for i in stmt[id+1:-1]:
 			if i is not ',':
+				if self.arg_nam.count(i) > 0:
+					string_args[-1] = "args[" + str(self.arg_nam.index(i)) + "]"
+				elif i == 'size':
+					size = self.args[self.arg_nam.index(stmt[stmt.index(i)-2])].size
+					string_args[-1] = str(size)
+				else:
+					string_args[-1] += str(i)
+			else:
 				string_args.append("")
-		print module, function, string_args
-		modules.execute(module,function,string_args)
+		modules.execute(module,function,string_args,cu_args)
 
 	def device_create_func(self,index,name,stmt):
 #		print "Inside DCF",name, stmt, self.device_py
@@ -237,7 +251,7 @@ class cu_test:
 #		print stmt
 		index = self.device_func_name.index(name)
 		for i in self.device_sentences[index]:
-			self.device_body_buff = self.declare_workitems(i,self.device_body_buff)
+			self.device_body_buff = self.declare_workitems(i,self.devicNonee_body_buff)
 #		print "Inside CREATING DEVICE BODY"
 		for i in self.device_sentences[index]:
 			self.device_body_buff = self.inspect_it(i,self.device_body_buff)
@@ -442,66 +456,71 @@ class cu_test:
 	def defargs(self,comma,control,kernel):
 		if self.arguments.count(self.keys[control]) < 2:
 			self.arguments.append(self.keys[control])
+			kernel_arg = ""
 			if comma == True:
 				if "int64*" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + ", long* " + self.keys[control]
+					kernel_arg = ", long* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "long*"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "int32*" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + ", int* " + self.keys[control]
+					kernel_arg = ", int* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "int*"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "float32*" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + ", float* " + self.keys[control]
+					kernel_arg = ", float* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "float*"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "float64*" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + ", double* " + self.keys[control]
+					kernel_arg = ", double* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "double*"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "int" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + ", int " + self.keys[control]
+					kernel_arg = ", int " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "int"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "float" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + ", float " + self.keys[control]
+					kernel_arg = ", float " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "float"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 			elif comma == False:
 				if "int64*" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + " long* " + self.keys[control]
+					kernel_arg = " long* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "long*"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "int32*" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + " int* " + self.keys[control]
+					kernel_arg = " int* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "int*"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "float32*" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + " float* " + self.keys[control]
+					kernel_arg = " float* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "float*"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "float64*" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + " double* " + self.keys[control]
+					kernel_arg = " double* " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "double*"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "int" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + " int " + self.keys[control]
+					kernel_arg = " int " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "int"
 					self.arg_nam[-1] = self.keys[control]
 					self.arg_nam.append("")
 				elif "float" == self.type_args[len(self.arguments) - 1]:
-					kernel = kernel + " float " + self.keys[control]
+					kernel_arg = " float " + self.keys[control]
 					self.type_vars[len(self.arguments) - 1] = "float"
+					self.arg_nam[-1] = self.keys[control]
+					self.arg_nam.append("")
+			self.kernel_args += kernel_arg
+			kernel += kernel_arg
 			self.var_nam.append(self.keys[control])
 		return kernel
 
@@ -551,6 +570,7 @@ class cu_test:
 		return str_for
 
 	def execute(self):
+		tmp = execu.cu_exe()
 		sh = shlex.shlex(self.code)
 		i = sh.get_token()
 		self.keys = [i]
@@ -586,15 +606,18 @@ class cu_test:
 #		print self.kernel, "Entering body()"
 		self.body()
 		self.kernel = self.kernel + "}"
-#		print self.kernel
 #		self.print_cu()
 		self.arg_nam.pop(-1)
+		self.kernel_final.append(self.kernel)
 		if self.return_kernel == False:
-			tmp = execu.cu_exe()
-#			for i in range(len()):
-			return tmp.exe_cu(self.kernel, self.func_name[0], self.threads, self.blocks, self.args, self.returns, self.device_dyn_p, self.arg_nam)
+			tmp.start(self.args,self.arg_nam)
+			for i in range(len(self.kernel_final)/2):
+				tmp.exe_cu(self.kernel_final[0], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p)
+				self.Urmod(self.modules[0],tmp.get_cu_args())
+				tmp.exe_cu(self.kernel_final[1], self.global_func +"_"+str(2*(i+1)), self.threads, self.blocks, self.device_dyn_p)
+			return tmp.get_returns(self.returns)
 		elif self.return_kernel == True:
-			return "/*This code is generated by Urutu\n Visit urutu.github.io*/\n" + self.kernel
+			return self.kernel_final
 
 	def print_cu(self):
 		print "In print_cu:"

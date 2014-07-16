@@ -14,21 +14,15 @@ class cl_exe:
 	mf = cl.mem_flags
 	cl_args = []
 	args = []
-	returns = []
-	nam_returns = []
 	argl = 0
 	retl = 0
-	arg_nam = []
-	id_ret_args = []
-	id_ret_ret = []
-	def exe_cl(self,stringg,func_name,threads,blocks,args,returns,arg_nam):
-#		print returns
-		self.args = args
-		self.nam_returns = returns
-		self.argl = len(args)
-		self.retl = len(returns)
-		self.arg_nam = arg_nam
-		self.allocargs()
+	returns = []
+	nam_returns = []
+	nam_args = []
+	id_ret = []
+	is_alloc = []
+
+	def exe_cl(self,stringg,func_name,threads,blocks):
 		prg = cl.Program(self.ctx,stringg).build()
 		if self.argl == 1:
 			prg.CL_kernel(self.queue,threads,blocks, self.cl_args[0])
@@ -50,6 +44,24 @@ class cl_exe:
 			prg.CL_kernel(self.queue,threads,blocks, self.cl_args[0], self.cl_args[1], self.cl_args[2], self.cl_args[3], self.cl_args[4], self.cl_args[5], self.cl_args[6], self.cl_args[7], self.cl_args[8])
 		elif self.argl == 10:
 			prg.CL_kernel(self.queue,threads,blocks, self.cl_args[0], self.cl_args[1], self.cl_args[2], self.cl_args[3], self.cl_args[4], self.cl_args[5], self.cl_args[6], self.cl_args[7], self.cl_args[8], self.cl_args[9])
+
+	def start(self,args,arg_nam):
+		self.args = args
+		self.nam_args = arg_nam
+		self.argl = len(args)
+		for i in range(self.argl):
+			self.cl_args.append(cl.Buffer(self.ctx,self.mf.READ_WRITE | self.mf.COPY_HOST_PTR, hostbuf = self.args[i]))
+
+	def flags(self):
+		for i in self.nam_args:
+			self.is_alloc.append(False)
+			if self.nam_returns.count(i) == 1:
+				self.id_ret.append(self.nam_args.index(i))
+
+	def get_returns(self,returns):
+		self.retl = len(returns)
+		self.nam_returns = returns
+		self.flags()
 		self.copydtoh()
 		return self.returns
 
@@ -66,9 +78,9 @@ class cl_exe:
 
 
 	def copydtoh(self):
-		for i in range(len(self.id_ret_ret)):
-			cl.enqueue_copy(self.queue,self.returns[self.id_ret_ret[i]],self.cl_args[self.id_ret_args[i]])
-		return
+		for i in range(len(self.id_ret)):
+			self.returns.append(self.args[self.id_ret[i]])
+			cl.enqueue_copy(self.queue,self.returns[i],self.cl_args[self.id_ret[i]])
 
 
 # End of File
