@@ -102,14 +102,17 @@ class cu_test:
 
 	def typeargs(self):
 		for arg in self.args:
-			j = str(type(arg[0])).split("'")
+			try:
+				j = str(type(arg[0])).split("'")
+			except:
+				j = str(type(arg)).split("'")
 			if 'numpy' in j[1]:
 				j = j[1].split(".")
 				self.type_args.append(j[1]+"*")
 				self.type_vars.append(j[1]+"*")
 			else:
-				self.type_args.append(j[0])
-				self.type_vars.append(j[0])
+				self.type_args.append(j[1])
+				self.type_vars.append(j[1])
 
 	def funcname_cu(self,control):
 		func_name = self.keys[control + 1]
@@ -251,7 +254,7 @@ class cu_test:
 #		print stmt
 		index = self.device_func_name.index(name)
 		for i in self.device_sentences[index]:
-			self.device_body_buff = self.declare_workitems(i,self.devicNonee_body_buff)
+			self.device_body_buff = self.declare_workitems(i,self.device_body_buff)
 #		print "Inside CREATING DEVICE BODY"
 		for i in self.device_sentences[index]:
 			self.device_body_buff = self.inspect_it(i,self.device_body_buff)
@@ -589,7 +592,6 @@ class cu_test:
 				self.kernel = self.defargs(comma, control, self.kernel)
 				comma = True
 				control = control + 1
-#			print self.kernel
 			ret = len(self.keys) - self.keys[::-1].index('return')
 			while self.keys[ret] != '':
 				if self.keys[ret] == ',':
@@ -610,7 +612,13 @@ class cu_test:
 		self.arg_nam.pop(-1)
 		self.kernel_final.append(self.kernel)
 		if self.return_kernel == False:
-			tmp.start(self.args,self.arg_nam)
+			np_args = []
+			np_arg_nam = []
+			for i in range(len(self.args)):
+				if str(type(self.args[i])).find('numpy') != -1:
+					np_args.append(self.args[i])
+					np_arg_nam.append(self.arg_nam[i])
+			tmp.start(np_args,np_arg_nam)
 			for i in range(len(self.kernel_final)/2):
 				tmp.exe_cu(self.kernel_final[0], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p)
 				self.Urmod(self.modules[0],tmp.get_cu_args())
