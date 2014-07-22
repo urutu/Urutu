@@ -2,7 +2,7 @@ from Urutu import *
 import numpy as np
 
 @Urutu("CU")
-def add(x, y, s):
+def add(s,x,y):
 	for j in range(10):
 		s[tx+10*j] = x[tx+10*j] + y[tx+10*j]
 	return s

@@ -73,3 +73,10 @@ print "The Array B is: \n", b
 print "Running on OpenCL.. \n", divmul([100,1,1], [1,1,1], a, b, c, d)
 print "Running on CUDA.. \n", addsub([100,1,1], [1,1,1], a, b, e, f)
 ```
+Keywords made available
+--------------------------
+```python
+and     elif    if      not
+as      else    in      or
+def     for     is      return
+```
