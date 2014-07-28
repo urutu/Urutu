@@ -366,8 +366,6 @@ class cu_test:
 				return 'char ' , self.stringize(var[:]), '[]', self.stringize(quote)
 			elif self.stringize(val).find('['):
 				if self.var_nam.count(var[0]) == 0 and self.device_scope == False:
-					print self.type_vars[self.var_nam.index(val[0])][:-1], self.stringize(var[:]), self.stringize(val[:])
-					print self.kernel
 					return self.type_vars[self.var_nam.index(val[0])][:-1],' ', self.stringize(var[:]), self.stringize(val[:])
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
