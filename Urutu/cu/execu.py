@@ -83,7 +83,7 @@ class cu_exe:
 		self.nam_returns = returns
 		self.flags()
 		self.dtoh()
-		self.dfree()
+#		self.dfree()
 		return self.returns
 
 	def dtoh(self):

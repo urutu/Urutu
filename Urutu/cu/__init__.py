@@ -364,6 +364,12 @@ class cu_test:
 				quote.append(val[1])
 				quote.append('"')
 				return 'char ' , self.stringize(var[:]), '[]', self.stringize(quote)
+			elif self.stringize(val).find('['):
+				if self.var_nam.count(var[0]) == 0:
+#					print self.type_vars[self.var_nam.index(val[0])][:-1], self.stringize(var[:]), self.stringize(val[:])
+					return self.type_vars[self.var_nam.index(val[0])][:-1],' ', self.stringize(var[:]), self.stringize(val[:])
+				else:
+					return '','',self.stringize(var[:]), self.stringize(val[:])
 			else:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 
@@ -620,9 +626,10 @@ class cu_test:
 					np_arg_nam.append(self.arg_nam[i])
 			tmp.start(np_args,np_arg_nam)
 			for i in range(len(self.kernel_final)/2):
-				tmp.exe_cu(self.kernel_final[0], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p)
-				self.Urmod(self.modules[0],tmp.get_cu_args())
-				tmp.exe_cu(self.kernel_final[1], self.global_func +"_"+str(2*(i+1)), self.threads, self.blocks, self.device_dyn_p)
+				print "In For!"
+				tmp.exe_cu(self.kernel_final[i], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p)
+				self.Urmod(self.modules[i],tmp.get_cu_args())
+			tmp.exe_cu(self.kernel_final[-1], self.global_func +"_"+str(len(self.kernel_final)), self.threads, self.blocks, self.device_dyn_p)
 			return tmp.get_returns(self.returns)
 		elif self.return_kernel == True:
 			return self.kernel_final
