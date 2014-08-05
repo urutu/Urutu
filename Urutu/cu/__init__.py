@@ -56,6 +56,7 @@ class cu_test:
 	arg_nam = [""]
 	return_kernel = False
 	modules = []
+	is_defined_device = []
 
 	def __init__(self, fn, args):
 		stri = inspect.getsource(fn)
@@ -163,13 +164,6 @@ class cu_test:
 		while i is not sh.eof:
 			stmt.append(i)
 			i = sh.get_token()
-#		print stmt
-		for j in self.device_func_name:
-			if stmt.count(j) > 0:
-				kernel += self.device_create_func(self.device_func_name.index(j),j, stmt)
-				kernel = self.device_body_buff + "}\n" + kernel
-				self.device_body_buff = ""
-				return kernel
 		if self.keys.count('tx') > 0 or self.keys.count("__shared"):
 			kernel, self.threads_dec[0] = threads.tx(self.threads_dec[0], kernel)
 		if self.keys.count('ty') > 0:
@@ -188,6 +182,12 @@ class cu_test:
 		if stmt.count('Bx') == 1 or stmt.count('By') == 1 or stmt.count('Bz') == 1:
 			blocks.blocks_decl(stmt, self.var_nam, self.var_val, self.blocks)
 			return kernel
+		for j in self.device_func_name:
+			if stmt.count(j) > 0:
+				kernel += self.device_create_func(self.device_func_name.index(j),j, stmt)
+				kernel = self.device_body_buff + "}\n" + kernel
+				self.device_body_buff = ""
+				return kernel
 		if stmt[0] == '__global' or stmt[0] == '__shared' or stmt[0] == '__register' or stmt[0] == '__constant' :
 			self.decarrays(stmt)
 			return kernel
@@ -233,39 +233,39 @@ class cu_test:
 
 	def device_create_func(self,index,name,stmt):
 #		print "Inside DCF",name, stmt, self.device_py
-		device_keys = self.device_py[index]
-		self.device_scope = True
-#		print "Device Keys",device_keys
-		is_dyn_parallel = False
-		if stmt[stmt.index("(")+1] == "[" and stmt[stmt.index("(")+9] == "[":
-#			print "Dynamic Parallelism"
-			thread_index = stmt.index('(') + 1
-			self.device_num_threads = [stmt[thread_index+1], stmt[thread_index+3], stmt[thread_index+5]]
-			block_index = thread_index + 8
-			self.device_num_blocks = [stmt[block_index+1], stmt[block_index+3], stmt[block_index+5]]
-#			print self.device_num_threads , self.device_num_blocks
-			stmt = stmt[:thread_index] + stmt[block_index+8:]
-#			print stmt
-			is_dyn_parallel = True
-			self.device_dyn_p = True
-		self.device_funcname(stmt[:],device_keys[device_keys.index('(')+1:device_keys.index(')')],True,is_dyn_parallel)
-#		print self.device_body_buff
-#		print "Inititiate threads"
-#		print stmt
-		index = self.device_func_name.index(name)
-		for i in self.device_sentences[index]:
-			self.device_body_buff = self.declare_workitems(i,self.device_body_buff)
-#		print "Inside CREATING DEVICE BODY"
-		for i in self.device_sentences[index]:
-			self.device_body_buff = self.inspect_it(i,self.device_body_buff)
-#		print self.device_body_buff
-		self.device_scope = False
-		self.kernel = self.device_body_buff + self.kernel
-		self.device_threads_dec = [False, False, False]
-		self.device_blocks_dec = [False, False, False]
-		if is_dyn_parallel == True:
-			return self.dyn_parallel(stmt,name)+";\n"
-		return self.stringize(stmt) + "; \n"
+		if self.is_defined_device[index] == False:
+			device_keys = self.device_py[index]
+			self.device_scope = True
+#			print "Device Keys",device_keys
+			is_dyn_parallel = False
+			if stmt[stmt.index("(")+1] == "[" and stmt[stmt.index("(")+9] == "[":
+#				print "Dynamic Parallelism"
+				thread_index = stmt.index('(') + 1
+				self.device_num_threads = [stmt[thread_index+1], stmt[thread_index+3], stmt[thread_index+5]]
+				block_index = thread_index + 8
+				self.device_num_blocks = [stmt[block_index+1], stmt[block_index+3], stmt[block_index+5]]
+#				print self.device_num_threads , self.device_num_blocks
+				stmt = stmt[:thread_index] + stmt[block_index+8:]
+#				print stmt
+				is_dyn_parallel = True
+				self.device_dyn_p = True
+			self.device_funcname(name,stmt[:],device_keys[device_keys.index('(')+1:device_keys.index(')')],True,is_dyn_parallel)
+			index = self.device_func_name.index(name)
+			for i in self.device_sentences[index]:
+				self.device_body_buff = self.declare_workitems(i,self.device_body_buff)
+#			print "Inside CREATING DEVICE BODY"
+			for i in self.device_sentences[index]:
+				self.device_body_buff = self.inspect_it(i,self.device_body_buff)
+#			print self.device_body_buff
+			self.device_scope = False
+			self.kernel = self.device_body_buff + self.kernel
+			self.device_threads_dec = [False, False, False]
+			self.device_blocks_dec = [False, False, False]
+			self.is_defined_device[index] = True
+			if is_dyn_parallel == True:
+				return self.dyn_parallel(stmt,name)+";\n"
+			return self.stringize(stmt) + "; \n"
+		return "/**/"
 
 	def dyn_parallel(self,stmt,name):
 		dimGrid = "dimGrid_"+str(name)
@@ -278,7 +278,7 @@ class cu_test:
 			str_dyn_last += str(i)
 		return str_dec_blocks+str_dec_threads+str_dyn_first+str_dyn_last
 
-	def device_funcname(self,stmt,args,device,is_dyn_parallel):
+	def device_funcname(self,func_name,stmt,args,device,is_dyn_parallel):
 #		print "Inside device_funcname: ", stmt
 		while ',' in args:
 			args.remove(',')
@@ -287,7 +287,7 @@ class cu_test:
 		elif device == True:
 			self.device_body_buff = "__device__ "
 		index = stmt.index("(")
-		tmp = " " + str(stmt[index-1]) + "("
+		tmp = " " + func_name + "("
 		if self.device_func_name.count(stmt[0]) == 1:
 			self.device_body_buff += "void "
 		elif stmt[1] == "[":
@@ -300,10 +300,13 @@ class cu_test:
 		stmt[index], stmt[-1] = ',',','
 		l=stmt.remove(stmt[0])
 #		print args
-		for j in range(len(stmt[index:])):
+		try:
+			end_index = stmt.index(")")
+		except:
+			end_index = -1
+		for j in range(len(stmt[index:end_index])):
 			i = stmt[j+index]
 			if i is not ",":
-#				print i
 				if self.var_nam.count(i) == 1:
 					if stmt[stmt.index(i)+1] == '[':
 						type_var = self.type_vars[self.var_nam.index(i)][:-1]
@@ -316,7 +319,7 @@ class cu_test:
 						self.device_var_nam[-1].append(args[idx])
 						self.device_type_vars[-1].append(type_var)
 				else:
-					if stmt[j+1+index] is '.':
+					if stmt[j+1+index] is '.' and stmt[j+index] != "blockDim":
 						self.device_body_buff += "float " + args[idx] + ", "
 						j+=2
 						self.device_var_nam[-1].append(args[idx])
@@ -440,6 +443,7 @@ class cu_test:
 #					print "In DEF"
 #					print self.device_py
 					self.is_device_code = True
+					self.is_defined_device.append(False)
 					self.device_tab = tabs
 					self.device_py.append([i])
 					if self.device_py[0] == []:
@@ -543,9 +547,7 @@ class cu_test:
 					str_for += " = 0; " + str(iterator) + " < sizeof(" + str(var_for) + ")/sizeof(" + str(var_for) + "[0])"
 					if words[words[ind:].index(')')+ind+1] != ")":
 						ind_closed = words[ind+1:].index(")")+ind+2
-						print words[ind_closed]
 						ind_total_close = words[ind+1:].index(")")+ind_closed-1
-						print words[ind_total_close]
 						for i in range(ind_closed, ind_total_close):
 							str_for += str(words[i])
 						str_for += "; " + str(iterator) + "++){\n"
@@ -625,7 +627,6 @@ class cu_test:
 					np_arg_nam.append(self.arg_nam[i])
 			tmp.start(np_args,np_arg_nam)
 			for i in range(len(self.kernel_final)/2):
-				print "In For!"
 				tmp.exe_cu(self.kernel_final[i], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p)
 				self.Urmod(self.modules[i],tmp.get_cu_args())
 			tmp.exe_cu(self.kernel_final[-1], self.global_func +"_"+str(len(self.kernel_final)), self.threads, self.blocks, self.device_dyn_p)
