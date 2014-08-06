@@ -27,29 +27,21 @@ def Urutu(arg):
 				return pycuda
 			if arg == "CL":
 				cl_ = cl.cl_test(fn,args)
-				ret = cl_.execute()
-				cl_ = []
-				return ret[:]
+				return cl_.execute()
 			elif arg == "CU":
 				cu_ = cu.cu_test(fn,args)
-				ret = cu_.execute()
-				cu_ = []
-				return ret[:]
+				return cu_.execute()
 			elif arg == "gpu":
 				if import_cuda() is True:
 					cu__ = cu.cu_test(fn,args)
-					ret = cu__.execute()
-					cu__ = []
-					return ret[:]
+					return cu__.execute()
 				else:
 					print "CUDA is not found on this machine"
 					print "Switching to OpenCL..."
 					if import_opencl():
 						cl__ = cl.cl_test(fn,args)
 						print "PyOpenCL"
-						ret = cl__.execute()
-						cl__ = []
-						return ret[:]
+						return cl__.execute()
 					else:
 						print "CUDA and OpenCL are not found on this machine"
 			else:
