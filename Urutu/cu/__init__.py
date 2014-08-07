@@ -400,7 +400,6 @@ class cu_test:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
 			elif val.count('+') > 0 or val.count('*') > 0 or val.count('-') > 0:
 				if self.device_var_nam[-1].count(var[0]) == 0:
-					print self.device_var_nam, "here"
 					return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
@@ -658,7 +657,6 @@ class cu_test:
 #		self.print_cu()
 		self.arg_nam.pop(-1)
 		self.kernel_final.append(self.kernel)
-		print self.kernel,self.type_vars,self.var_nam,self.device_var_nam
 		if self.return_kernel == False:
 			np_args = []
 			np_arg_nam = []
