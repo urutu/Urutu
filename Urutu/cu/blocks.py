@@ -23,24 +23,22 @@ def bz(blocks_dec, kernel):
 		blocks_dec = True
 	return kernel, blocks_dec
 
-def blocks_decl(stmt, var_nam, var_val, blocks):
+def blocks_decl(stmt, var_nam, var_val, blocks, type_vars):
 	equ = stmt.index('=')
-	if var_nam.count('Bx') < 1:
+	kernel = ""
+	if var_nam.count('Bx') < 1 and stmt.count('Bx') > 0:
 		pos = stmt.index('Bx')
-		pos_val = stmt[pos + 1 + equ]
 		var_nam.append(stmt[pos])
-		var_val.append(int(pos_val))
-		blocks[0] = int(pos_val)
-	if var_nam.count('By') < 1:
+		kernel += "int Bx = gridDim.x;\n"
+		type_vars.append("int")
+	if var_nam.count('By') < 1 and stmt.count('By') > 0:
 		pos = stmt.index('By')
-		pos_val = stmt[pos + 1 + equ]
 		var_nam.append(stmt[pos])
-		var_val.append(int(pos_val))
-		blocks[1] = int(pos_val)
+		kernel += "int By = gridDim.y;\n"
+		type_vars.append("int")
 	if var_nam.count('Bz') < 1:
 		pos = stmt.index('Bz')
-		pos_val = stmt[pos + 1 + equ]
 		var_nam.append(stmt[pos])
-		var_val.append(int(pos_val))
-		blocks[2] = int(pos_val)
-	return var_nam, var_val, blocks
+		kernel += "int Bz = gridDim.z;\n"
+		type_vars.append("int")
+	return var_nam, var_val, blocks, kernel, type_vars

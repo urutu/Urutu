@@ -164,24 +164,46 @@ class cu_test:
 		while i is not sh.eof:
 			stmt.append(i)
 			i = sh.get_token()
-		if self.keys.count('tx') > 0 or self.keys.count("__shared"):
+		if self.keys.count('tx') > 0:
 			kernel, self.threads_dec[0] = threads.tx(self.threads_dec[0], kernel)
+			self.var_nam.append("tx")
+			self.type_vars.append("int")
 		if self.keys.count('ty') > 0:
 			kernel, self.threads_dec[1] = threads.ty(self.threads_dec[1], kernel)
+			self.var_nam.append("ty")
+			self.type_vars.append("int")
 		if self.keys.count('tz') > 0:
 			kernel, self.threads_dec[2] = threads.tz(self.threads_dec[2], kernel)
+			self.var_nam.append("tz")
+			self.type_vars.append("int")
 		if self.keys.count('bx') > 0:
 			kernel, self.blocks_dec[0] = blocks.bx(self.blocks_dec[0], kernel)
+			self.var_nam.append("bx")
+			self.type_vars.append("int")
 		if self.keys.count('by') > 0:
 			kernel, self.blocks_dec[1] = blocks.by(self.blocks_dec[1], kernel)
+			self.var_nam.append("by")
+			self.type_vars.append("int")
 		if self.keys.count('bz') > 0:
 			kernel, self.blocks_dec[2] = blocks.bz(self.blocks_dec[2], kernel)
+			self.var_nam.append("bz")
+			self.type_vars.append("int")
 		if stmt.count('Tx') == 1 or stmt.count('Ty') == 1 or stmt.count('Tz') == 1:
-			threads.threads_decl(stmt, self.var_nam, self.var_val, self.threads)
-			return kernel
+			self.var_nam, self.var_val, self.threads, ker, self.type_vars= threads.threads_decl(stmt, self.var_nam, self.var_val, self.threads, self.type_vars)
+			kernel += ker
+			if stmt.count('=') > 0:
+				id_eq = stmt.index('=')
+				type_, ptr_, var_ ,val_ = self.checktype(stmt[:id_eq],stmt[id_eq+1:])
+				kernel += type_+ptr_+var_ + " = " + val_ +";\n"
+				return kernel
 		if stmt.count('Bx') == 1 or stmt.count('By') == 1 or stmt.count('Bz') == 1:
-			blocks.blocks_decl(stmt, self.var_nam, self.var_val, self.blocks)
-			return kernel
+			self.var_nam, self.var_val, self.blocks, ker, self.type_vars = blocks.blocks_decl(stmt, self.var_nam, self.var_val, self.blocks, self.type_vars)
+			kernel += ker
+			if stmt.count('=') > 0:
+				id_eq = stmt.index("=")
+				type_, ptr_, var_, val_ = self.checktype(stmt[:id_eq],stmt[id_eq+1:])
+				kernel += type_ + ptr_ + var_ + " = " + val_ +";\n"
+				return kernel
 		for j in self.device_func_name:
 			if stmt.count(j) > 0:
 				kernel += self.device_create_func(self.device_func_name.index(j),j, stmt)
@@ -353,7 +375,7 @@ class cu_test:
 # Checking the type of variable to be created
 	def checktype(self,var,val):
 #		print var, val
-		if val.count('.') == 1:
+		if val.count('.') == 1 or val.count('/') > 0:
 			return 'float ', self.stringize(var[:]) , '',  self.stringize(val[:])
 		try:
 			int(self.stringize(val))
@@ -367,11 +389,13 @@ class cu_test:
 				quote.append(val[1])
 				quote.append('"')
 				return 'char ' , self.stringize(var[:]), '[]', self.stringize(quote)
-			elif self.stringize(val).find('['):
+			elif val.count('[') > 0:
 				if self.var_nam.count(var[0]) == 0 and self.device_scope == False:
 					return self.type_vars[self.var_nam.index(val[0])][:-1],' ', self.stringize(var[:]), self.stringize(val[:])
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
+			elif val.count('+') > 0 or val.count('*') > 0 or val.count('-') > 0:
+				return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
 			else:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 
