@@ -149,12 +149,9 @@ class cu_test:
 		if phrase.count('#') > 0:
 			return
 		tab = phrase.count('')
-##		if tab > self.tabs and tab != len(phrase):
-#			for j in range(tab - self.tabs):
-#				kernel = kernel + "{\n"
-		if tab < self.tabs:
+		if tab < self.tabs and self.device_scope == False:
 			for j in range(self.tabs - tab):
-				kernel = kernel + "}\n"
+				kernel += "}\n"
 		self.tabs = phrase.count('')
 		sh = shlex.shlex(phrase[-1])
 		i = sh.get_token()
@@ -164,27 +161,27 @@ class cu_test:
 		while i is not sh.eof:
 			stmt.append(i)
 			i = sh.get_token()
-		if self.keys.count('tx') > 0:
+		if self.keys.count('tx') > 0 and self.var_nam.count('tx') == 0:
 			kernel, self.threads_dec[0] = threads.tx(self.threads_dec[0], kernel)
 			self.var_nam.append("tx")
 			self.type_vars.append("int")
-		if self.keys.count('ty') > 0:
+		if self.keys.count('ty') > 0 and self.var_nam.count('ty') == 0:
 			kernel, self.threads_dec[1] = threads.ty(self.threads_dec[1], kernel)
 			self.var_nam.append("ty")
 			self.type_vars.append("int")
-		if self.keys.count('tz') > 0:
+		if self.keys.count('tz') > 0 and self.var_nam.count('tz') == 0:
 			kernel, self.threads_dec[2] = threads.tz(self.threads_dec[2], kernel)
 			self.var_nam.append("tz")
 			self.type_vars.append("int")
-		if self.keys.count('bx') > 0:
+		if self.keys.count('bx') > 0 and self.var_nam.count('bx') == 0:
 			kernel, self.blocks_dec[0] = blocks.bx(self.blocks_dec[0], kernel)
 			self.var_nam.append("bx")
 			self.type_vars.append("int")
-		if self.keys.count('by') > 0:
+		if self.keys.count('by') > 0 and self.var_nam.count('by') == 0:
 			kernel, self.blocks_dec[1] = blocks.by(self.blocks_dec[1], kernel)
 			self.var_nam.append("by")
 			self.type_vars.append("int")
-		if self.keys.count('bz') > 0:
+		if self.keys.count('bz') > 0 and self.var_nam.count('bz') == 0:
 			kernel, self.blocks_dec[2] = blocks.bz(self.blocks_dec[2], kernel)
 			self.var_nam.append("bz")
 			self.type_vars.append("int")
@@ -193,8 +190,8 @@ class cu_test:
 			kernel += ker
 			if stmt.count('=') > 0:
 				id_eq = stmt.index('=')
-				type_, ptr_, var_ ,val_ = self.checktype(stmt[:id_eq],stmt[id_eq+1:])
-				kernel += type_+ptr_+var_ + " = " + val_ +";\n"
+				type_, ptr_, var_, val_ = self.checktype(stmt[:id_eq],stmt[id_eq+1:])
+				kernel += type_+ptr_+var_ + "= " + val_ +";\n"
 				return kernel
 		if stmt.count('Bx') == 1 or stmt.count('By') == 1 or stmt.count('Bz') == 1:
 			self.var_nam, self.var_val, self.blocks, ker, self.type_vars = blocks.blocks_decl(stmt, self.var_nam, self.var_val, self.blocks, self.type_vars)
@@ -202,7 +199,7 @@ class cu_test:
 			if stmt.count('=') > 0:
 				id_eq = stmt.index("=")
 				type_, ptr_, var_, val_ = self.checktype(stmt[:id_eq],stmt[id_eq+1:])
-				kernel += type_ + ptr_ + var_ + " = " + val_ +";\n"
+				kernel += type_ + ptr_ + var_ + "= " + val_ +";\n"
 				return kernel
 		for j in self.device_func_name:
 			if stmt.count(j) > 0:
@@ -326,30 +323,36 @@ class cu_test:
 			end_index = stmt.index(")")
 		except:
 			end_index = -1
+		flag = True
 		for j in range(len(stmt[index:end_index])):
 			i = stmt[j+index]
 			if i is not ",":
-				if self.var_nam.count(i) == 1:
-					if stmt[stmt.index(i)+1] == '[':
-						type_var = self.type_vars[self.var_nam.index(i)][:-1]
-						self.device_body_buff += type_var + " " + args[idx] + ", "
-						self.device_var_nam[-1].append(args[idx])
-						self.device_type_vars[-1].append(type_var)
+				if i is '[':
+					flag = False
+				if i is ']':
+					flag = True
+				if flag == True:
+					if self.var_nam.count(i) == 1:
+						if stmt[stmt.index(i)+1] == '[':
+							type_var = self.type_vars[self.var_nam.index(i)][:-1]
+							self.device_body_buff += type_var + " " + args[idx] + ", "
+							self.device_var_nam[-1].append(args[idx])
+							self.device_type_vars[-1].append(type_var)
+						else:
+							type_var = self.type_vars[self.var_nam.index(i)]
+							self.device_body_buff += type_var + " " + args[idx] + ", "
+							self.device_var_nam[-1].append(args[idx])
+							self.device_type_vars[-1].append(type_var)
 					else:
-						type_var = self.type_vars[self.var_nam.index(i)]
-						self.device_body_buff += type_var + " " + args[idx] + ", "
-						self.device_var_nam[-1].append(args[idx])
-						self.device_type_vars[-1].append(type_var)
-				else:
-					if stmt[j+1+index] is '.' and stmt[j+index] != "blockDim":
-						self.device_body_buff += "float " + args[idx] + ", "
-						j+=2
-						self.device_var_nam[-1].append(args[idx])
-						self.device_type_vars[-1].append("float")
-					elif type(stmt[j]) is int or stmt[j] is '-':
-						self.device_body_buff += "int " + args[idx] + ", "
-						self.device_var_nam[-1].append(args[idx])
-						self.device_type_vars[-1].append("int")
+						if stmt[j+1+index] is '.' and stmt[j+index] != "blockDim":
+							self.device_body_buff += "float " + args[idx] + ", "
+							j+=2
+							self.device_var_nam[-1].append(args[idx])
+							self.device_type_vars[-1].append("float")
+						elif type(stmt[j]) is int or stmt[j] is '-':
+							self.device_body_buff += "int " + args[idx] + ", "
+							self.device_var_nam[-1].append(args[idx])
+							self.device_type_vars[-1].append("int")
 			else:
 				idx += 1
 		dec_threads = True
@@ -372,6 +375,7 @@ class cu_test:
 			phrase = phrase + str(i)
 		return phrase
 
+
 # Checking the type of variable to be created
 	def checktype(self,var,val):
 #		print var, val
@@ -382,7 +386,7 @@ class cu_test:
 			return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
 		except:
 			if self.stringize(val).find('"') != -1:
-				return 'char ', self.stringize(var[:]), '[]',  self.stringize(val[:])
+				return 'char ', self.stringize(var[:]), '[]', self.stringize(val[:])
 			elif self.stringize(val).find("'") != -1:
 				val = str(val[0]).split("'")
 				quote = ['"']
@@ -395,15 +399,22 @@ class cu_test:
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
 			elif val.count('+') > 0 or val.count('*') > 0 or val.count('-') > 0:
-				return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
+				if self.device_var_nam[-1].count(var[0]) == 0:
+					print self.device_var_nam, "here"
+					return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
+				else:
+					return '','',self.stringize(var[:]), self.stringize(val[:])
+				if self.var_nam.count(var[0]) == 0:
+					return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
+				else:
+					return '','',self.stringize(var[:]), self.stringize(val[:])
 			else:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
-
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase,kernel):
 #		print "Inside Dec vars",kernel,phrase,stmt
-		if kernel[-2] == '}':
-			kernel = kernel[:-2]
+#		if kernel[-2] == '}':
+#			kernel = kernel[:-2]
 #			kernel += "\n"
 		if stmt.count('return') == 1:
 			kernel += phrase+";\n"
@@ -430,7 +441,13 @@ class cu_test:
 				if self.var_nam.count(i) == 0 and stmt.index('=') > i:
 					ret_checktype = self.checktype(stmt[commavarid[i]+1:commavarid[i+1]],stmt[commavalid[i]+1:commavalid[i+1]])
 #					print "ret_checktype",ret_checktype
-					kernel += ret_checktype[0] + ret_checktype[1] + ret_checktype[2] + " = " + ret_checktype[3] + ";\n"
+					kernel += ret_checktype[0] + ret_checktype[1] + ret_checktype[2] + "= " + ret_checktype[3] + ";\n"
+					if self.device_scope == False:
+						self.var_nam.append(ret_checktype[1])
+						self.type_vars.append(ret_checktype[0])
+					elif self.device_scope == True:
+						self.device_var_nam[-1].append(ret_checktype[1])
+						self.device_type_vars[-1].append(ret_checktype[0])
 #			print "Exiting decvars",kernel
 			return kernel
 
@@ -600,7 +617,6 @@ class cu_test:
 			self.var_nam.append(str(iterator))
 			self.type_vars.append(type_var_for)
 #			print self.type_vars, self.var_nam
-		self.tabs += 1
 		return str_for
 
 	def execute(self):
@@ -642,6 +658,7 @@ class cu_test:
 #		self.print_cu()
 		self.arg_nam.pop(-1)
 		self.kernel_final.append(self.kernel)
+		print self.kernel,self.type_vars,self.var_nam,self.device_var_nam
 		if self.return_kernel == False:
 			np_args = []
 			np_arg_nam = []
