@@ -161,6 +161,8 @@ class cu_test:
 		while i is not sh.eof:
 			stmt.append(i)
 			i = sh.get_token()
+		if stmt.count('and') > 0:
+			stmt[stmt.index('and')] = " && "
 		if self.keys.count('tx') > 0 and self.var_nam.count('tx') == 0:
 			kernel, self.threads_dec[0] = threads.tx(self.threads_dec[0], kernel)
 			self.var_nam.append("tx")
@@ -191,6 +193,8 @@ class cu_test:
 			if stmt.count('=') > 0:
 				id_eq = stmt.index('=')
 				type_, ptr_, var_, val_ = self.checktype(stmt[:id_eq],stmt[id_eq+1:])
+				self.var_nam.append(ptr_)
+				self.type_vars.append(type_)
 				kernel += type_+ptr_+var_ + "= " + val_ +";\n"
 				return kernel
 		if stmt.count('Bx') == 1 or stmt.count('By') == 1 or stmt.count('Bz') == 1:
@@ -199,6 +203,8 @@ class cu_test:
 			if stmt.count('=') > 0:
 				id_eq = stmt.index("=")
 				type_, ptr_, var_, val_ = self.checktype(stmt[:id_eq],stmt[id_eq+1:])
+				self.type_vars.append(type_)
+				self.var_nam.append(ptr_)
 				kernel += type_ + ptr_ + var_ + "= " + val_ +";\n"
 				return kernel
 		for j in self.device_func_name:
@@ -401,8 +407,6 @@ class cu_test:
 			elif val.count('+') > 0 or val.count('*') > 0 or val.count('-') > 0:
 				if self.device_var_nam[-1].count(var[0]) == 0:
 					return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
-				else:
-					return '','',self.stringize(var[:]), self.stringize(val[:])
 				if self.var_nam.count(var[0]) == 0:
 					return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
 				else:
