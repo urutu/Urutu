@@ -385,7 +385,7 @@ class cu_test:
 # Checking the type of variable to be created
 	def checktype(self,var,val):
 #		print var, val
-		if val.count('.') == 1 or val.count('/') > 0:
+		if val.count('.') == 1:
 			return 'float ', self.stringize(var[:]) , '',  self.stringize(val[:])
 		try:
 			int(self.stringize(val))
@@ -399,7 +399,7 @@ class cu_test:
 				quote.append(val[1])
 				quote.append('"')
 				return 'char ' , self.stringize(var[:]), '[]', self.stringize(quote)
-			elif val.count('[') > 0:
+			elif val.count('[') > 0 or var.count(']') > 0:
 				if self.var_nam.count(var[0]) == 0 and self.device_scope == False:
 					return self.type_vars[self.var_nam.index(val[0])][:-1],' ', self.stringize(var[:]), self.stringize(val[:])
 				else:
@@ -411,6 +411,8 @@ class cu_test:
 					return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
+			elif val.count('/') > 0:
+					return 'float', self.stringize(var[:]), '', self.stringize(val[:])
 			else:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 # a = 10 type variables are declared here!
@@ -443,7 +445,6 @@ class cu_test:
 			for i in range(commacount):
 				if self.var_nam.count(i) == 0 and stmt.index('=') > i:
 					ret_checktype = self.checktype(stmt[commavarid[i]+1:commavarid[i+1]],stmt[commavalid[i]+1:commavalid[i+1]])
-#					print "ret_checktype",ret_checktype
 					kernel += ret_checktype[0] + ret_checktype[1] + ret_checktype[2] + "= " + ret_checktype[3] + ";\n"
 					if self.device_scope == False:
 						self.var_nam.append(ret_checktype[1])
