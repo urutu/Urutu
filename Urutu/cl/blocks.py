@@ -4,21 +4,21 @@
 
 def bx(blocks_dec, kernel):
 	if blocks_dec == False:
-		string = "int bx = get_group_id(0);\n"
+		string = "int bx = (get_global_id(0) - get_local_id(0)) / get_local_size(0);\n"
 		kernel = kernel + string
 		blocks_dec = True
 	return kernel, blocks_dec
 
 def by(blocks_dec, kernel):
 	if blocks_dec == False:
-		string = "int by = get_group_id(1);\n"
+		string = "int by = (get_global_id(1) - get_local_id(1)) / get_local_size(1);\n"
 		kernel = kernel + string
 		blocks_dec = True
 	return kernel, blocks_dec
 
 def bz(blocks_dec, kernel):
 	if blocks_dec == False:
-		string = "int bz = get_group_id(2);\n"
+		string = "int bz = (get_global_id(2) - get_local_id(2)) / get_local_size(2);\n"
 		kernel = kernel + string
 		blocks_dec = True
 	return kernel, blocks_dec
