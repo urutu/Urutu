@@ -4,21 +4,21 @@
 
 def tx(threads_dec,kernel):
 	if threads_dec == False:
-		string = "int tx = get_global_id(0);\n"
+		string = "int tx = get_local_id(0);\n"
 		kernel = kernel + string
 		threads_dec = True
 	return kernel, threads_dec
 
 def ty(threads_dec,kernel):
 	if threads_dec == False:
-		string = "int ty = get_global_id(1);\n"
+		string = "int ty = get_local_id(1);\n"
 		kernel = kernel + string
 		threads_dec = True
 	return kernel, threads_dec
 
 def tz(threads_dec, kernel):
 	if threads_dec == False:
-		string = "int tz = get_global_id(2);\n"
+		string = "int tz = get_local_id(2);\n"
 		kernel = kernel + string
 		threads_dec = True
 	return kernel, threads_dec
