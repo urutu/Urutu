@@ -11,14 +11,14 @@ def bx(blocks_dec, kernel):
 
 def by(blocks_dec, kernel):
 	if blocks_dec == False:
-		string = "int bx = get_local_id(1);\n"
+		string = "int by = get_local_id(1);\n"
 		kernel = kernel + string
 		blocks_dec = True
 	return kernel, blocks_dec
 
 def bz(blocks_dec, kernel):
 	if blocks_dec == False:
-		string = "int bx = get_local_id(2);\n"
+		string = "int bz = get_local_id(2);\n"
 		kernel = kernel + string
 		blocks_dec = True
 	return kernel, blocks_dec
