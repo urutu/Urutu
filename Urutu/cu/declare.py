@@ -50,7 +50,7 @@ def decshared(stmt, type_vars, var_nam, args, kernel):
 	kernel = kernel + "__shared__ " + str(deftype[:-1]) + " " + str(stmt[0]) + "[];\n" + str(stmt[0]) + "[0] = " + str(stmt[index:]) + ";\n"
 	var_nam.append(stmt[0])
 	type_vars.append(str(deftype[:-1])+"*")
-	print var_nam,type_vars
+#	print var_nam,type_vars
 	return kernel, var_nam, type_vars
 
 def decregister(stmt, type_vars, var_nam, args, kernel):
