@@ -47,7 +47,7 @@ def decshared(stmt, type_vars, var_nam, args, kernel):
 	if stmt.count(':') == 1:
 		endindex = int(stmt[stmt.index(':') + 1])
 		startindex = int(stmt[stmt.index(':') - 1])
-	kernel = kernel + "__shared__ " + str(deftype[:-1]) + " " + str(stmt[0]) + "[];\n" + str(stmt[0]) + "[0] = " + str(stmt[index:]) + ";\n"
+	kernel = kernel + "extern __shared__ " + str(deftype[:-1]) + " " + str(stmt[0]) + "[];\n" + stringize(stmt) + ";\n"
 	var_nam.append(stmt[0])
 	type_vars.append(str(deftype[:-1])+"*")
 #	print var_nam,type_vars
@@ -71,3 +71,10 @@ def decregister(stmt, type_vars, var_nam, args, kernel):
 	var_nam.append(stmt[index - 1])
 	type_vars.append(str(deftype[:-1])+"*")
 	return kernel, var_nam, type_vars
+
+
+def stringize(stmt):
+	tmp = ""
+	for i in stmt:
+		tmp += str(i)
+	return tmp

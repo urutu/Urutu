@@ -57,6 +57,7 @@ class cu_test:
 	return_kernel = False
 	modules = []
 	is_defined_device = []
+	is_shared = False
 
 	def __init__(self, fn, args):
 		stri = inspect.getsource(fn)
@@ -83,6 +84,7 @@ class cu_test:
 					self.__global.append(word)
 #			print self.__global
 		if phrase[0] == '__shared' and phrase[1] == 'is':
+			self.is_shared = True
 			phrase.pop(0)
 			for word in phrase:
 				if word != ',':
@@ -412,9 +414,15 @@ class cu_test:
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
 			elif val.count('/') > 0:
-					return 'float ', self.stringize(var[:]), '', self.stringize(val[:])
+				return 'float ', self.stringize(var[:]), '', self.stringize(val[:])
+			elif self.var_nam.count(val[0]) > 0 and self.var_nam.count(var) == 0:
+				id = self.var_nam.index(val[0])
+				return self.stringize(self.type_vars[id]), '', self.stringize(var), self.stringize(val)
+			elif val[0] == "int" or val[0] == "float":
+				return val[0]+' ', '', self.stringize(var), self.stringize(val)
 			else:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
+
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase,kernel):
 #		print "Inside Dec vars",kernel,phrase,stmt
@@ -457,7 +465,7 @@ class cu_test:
 
 #	CHECKVARS here!!
 	def checkvars(self,stmt,phrase,kernel):
-#		print "Inside Check Vars",phrase, stmt, kernel
+#		print "Inside Check Vars",phrase, stmt
 		if self.__shared.count(stmt[0]) == 1 and self.var_nam.count(stmt[0]) == 0:
 			kernel, self.var_nam, self.type_vars = declare.decshared(stmt, self.type_vars, self.var_nam, self.args, kernel)
 			return kernel
@@ -671,9 +679,9 @@ class cu_test:
 					np_arg_nam.append(self.arg_nam[i])
 			tmp.start(np_args,np_arg_nam)
 			for i in range(len(self.kernel_final)/2):
-				tmp.exe_cu(self.kernel_final[i], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p)
+				tmp.exe_cu(self.kernel_final[i], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
 				self.Urmod(self.modules[i],tmp.get_cu_args())
-			tmp.exe_cu(self.kernel_final[-1], self.global_func +"_"+str(len(self.kernel_final)), self.threads, self.blocks, self.device_dyn_p)
+			tmp.exe_cu(self.kernel_final[-1], self.global_func +"_"+str(len(self.kernel_final)), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
 			return tmp.get_returns(self.returns)
 		elif self.return_kernel == True:
 			return self.kernel_final
