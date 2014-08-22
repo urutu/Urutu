@@ -412,7 +412,7 @@ class cu_test:
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
 			elif val.count('/') > 0:
-					return 'float', self.stringize(var[:]), '', self.stringize(val[:])
+					return 'float ', self.stringize(var[:]), '', self.stringize(val[:])
 			else:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 # a = 10 type variables are declared here!
