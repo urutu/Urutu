@@ -28,13 +28,8 @@ class cu_exe:
 		else:
 			mod=SourceModule(stringg)
 		func=mod.get_function(func_name)
-		shared_mem = 0
 		if is_shared == True:
-			for i in self.args:
-				if shared_mem < i.size:
-					shared_mem = i.size
-		if is_shared == True:
-			func(*self.cu_args,block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]),shared=shared_mem)
+			func(*self.cu_args,block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]),shared=16*1024)
 		else:
 			func(*self.cu_args,block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]))
 
