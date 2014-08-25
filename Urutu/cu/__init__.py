@@ -235,7 +235,7 @@ class cu_test:
 			self.kernel = kernel
 			return kernel
 		else:
-#			print "Entering Checkvars"
+#			print "Entering Checkvars",phrase
 			return self.checkvars(stmt,phrase[-1],kernel)
 #		print stmt, self.tabs
 
@@ -425,7 +425,7 @@ class cu_test:
 
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase,kernel):
-#		print "Inside Dec vars",kernel,phrase,stmt
+#		print "Inside Dec vars",phrase,stmt
 #		if kernel[-2] == '}':
 #			kernel = kernel[:-2]
 #			kernel += "\n"
@@ -447,6 +447,7 @@ class cu_test:
 				if k == ',' and tmp.index(k) > ideq:
 					commavalid.append(tmp.index(k))
 					tmp[tmp.index(k)] = ''
+#			print tmp
 			commacount = len(commavarid)
 			commavalid.append(len(tmp))
 			commavarid.append(ideq)
