@@ -4,8 +4,8 @@ import numpy as np
 @Urutu("gpu")
 def math(a, b, c, d, e, f):
 	__shared is x , y
-	x = a[0:100]
-	y = b[0:100]
+	x[tx] = a[tx]
+	y[tx] = b[tx]
 
 	def add(p,q):
 		p = p + 1
