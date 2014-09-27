@@ -145,6 +145,16 @@ class cu_test:
 			kernel, self.device_blocks_dec[2] = blocks.bz(self.device_blocks_dec[2], kernel)
 		return kernel
 
+
+
+
+
+
+
+
+
+
+
 	def inspect_it(self,sentence,kernel):
 #		print "Inside inspect_it()",sentence,kernel
 		phrase = sentence.split('\t')
@@ -209,6 +219,13 @@ class cu_test:
 				self.var_nam.append(ptr_)
 				kernel += type_ + ptr_ + var_ + "= " + val_ +";\n"
 				return kernel
+		if stmt.count('map') > 0:
+			self.kernel_final.append(kernel+"}")
+			start = keys.index('map') + 2
+			map_name = "map_" + str(keys[start])
+			stri  = "__global__ void " + map_name
+			print stmt
+			return kernel
 		for j in self.device_func_name:
 			if stmt.count(j) > 0:
 				kernel += self.device_create_func(self.device_func_name.index(j),j, stmt)
@@ -682,6 +699,8 @@ class cu_test:
 			for i in range(len(self.kernel_final)/2):
 				tmp.exe_cu(self.kernel_final[i], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
 				self.Urmod(self.modules[i],tmp.get_cu_args())
+				if self.ismap[i] == True:
+					self.exe_map(self.mapcode[i],self.mapname[i],self.mapargs[i])
 			tmp.exe_cu(self.kernel_final[-1], self.global_func +"_"+str(len(self.kernel_final)), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
 			return tmp.get_returns(self.returns)
 		elif self.return_kernel == True:
