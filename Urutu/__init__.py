@@ -4,7 +4,7 @@
 # Modified: 27 Jun 2014
 
 from cl import cl_test
-from cu import cu_test
+from cu import ur_cuda
 
 def Urutu(arg):
 	def wrap(fn):
@@ -29,11 +29,11 @@ def Urutu(arg):
 				cl_ = cl.cl_test(fn,args)
 				return cl_.execute()
 			elif arg == "CU":
-				cu_ = cu.cu_test(fn,args)
+				cu_ = cu.ur_cuda(fn,args)
 				return cu_.execute()
 			elif arg == "gpu":
 				if import_cuda() is True:
-					cu__ = cu.cu_test(fn,args)
+					cu__ = cu.ur_cuda(fn,args)
 					return cu__.execute()
 				else:
 					print "CUDA is not found on this machine"
