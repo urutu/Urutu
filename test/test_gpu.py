@@ -4,8 +4,8 @@ import numpy as np
 @Urutu("gpu")
 def math(a, b, c, d, e, f):
 	__shared is x , y
-	x = a[0:100]
-	y = b[0:100]
+	x[tx] = a[tx]
+	y[tx] = b[tx]
 
 	def add(p,q):
 		p = p + 1
@@ -33,4 +33,4 @@ f = np.array(a, dtype = 'd')
 
 print "The Array A is: \n", a
 print "The Array B is: \n", b
-print "Running on GPU.. \n", math([100,1,1],[100,1,1],a, b, c, d, e, f)
+print "Running on GPU.. \n", math([100,1,1],[1,1,1],a, b, c, d, e, f)

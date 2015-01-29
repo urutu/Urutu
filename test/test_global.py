@@ -3,22 +3,18 @@ import numpy as np
 
 @Urutu("CL")
 def divmul(a, b, c, d):
-	Tx, Ty, Tz = 100, 1, 1
-	Bx, By, Bz = 1, 1, 1
 	__global is x , y
-	x = a[0:100]
-	y = b[0:100]
+	x[tx] = a[tx]
+	y[tx] = b[tx]
 	c[tx] = x[tx] / y[tx]
 	d[tx] = x[tx] * y[tx]
 	return c, d
 
 @Urutu("CU")
 def addsub(a, b, e, f):
-	Tx, Ty, Tz = 100, 1, 1
-	Bx, By, Bz = 1, 1, 1
 	__global is x , y
-	x = a[0:100]
-	y = b[0:100]
+	x[tx] = a[tx]
+	y[tx] = b[tx]
 	e[tx] = x[tx] + y[tx]
 	f[tx] = x[tx] - y[tx]
 	return e, f
@@ -32,5 +28,5 @@ f = np.empty_like(a)
 
 print "The Array A is: \n", a
 print "The Array B is: \n", b
-print "Running on OpenCL.. \n", divmul(a, b, c, d)
-print "Running on CUDA.. \n", addsub(a, b, e, f)
+print "Running on OpenCL.. \n", divmul(True,a, b, c, d)
+print "Running on CUDA.. \n", addsub(True,a, b, e, f)
