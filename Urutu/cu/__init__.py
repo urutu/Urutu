@@ -73,6 +73,12 @@ class ur_cuda:
 	is_shared = False
 	num_mod = 0
 	map_func = []
+	moved = []
+	cuda_exe = 0
+#The structure is a tuple {'order of calling':,'line number':,'return':,'source':, 'args':,'htod':, 'dtoh':, }
+	cpu_empty = {'id':0, 'ln':0, 'return':[], 'src':"", 'args': [], 'htod': [], 'dtoh': []}
+	cpu_id = 0
+	cpu_info = []
 
 	def __init__(self, fn, args):
 		stri = inspect.getsource(fn)
@@ -246,6 +252,23 @@ class ur_cuda:
 			self.num_mod = self.num_mod + 1
 			self.modules.append(stmt[2:])
 			self.kernel_final.append(kernel+"}")
+#			self.cpu_id = self.cpu_id + 1
+#			self.cpu_empty['id'] = self.cpu_id
+#			self.cpu_empty['ln'] = self.sentences.index(sentence)
+#			eq_id = stmt.index('=')
+#			if eq_id > 0:
+#				print "There are returns"
+#			self.cpu_empty['return'].append(stmt[eq_id-1])
+# If a data array is not sent to gpu, we use it in cpu function
+#			func_name = stmt.index('cpu') + 2
+#			for i in stmt[func_name+2:-1]:
+#				if i is not ',':
+#					self.cpu_empty['args'].append(i)
+#			stmt.remove(stmt[func_name-2])
+#			stmt.remove(stmt[func_name-2])
+#			self.cpu_empty['src'] = stmt
+#			self.cpu_info.append(self.cpu_empty)
+#			print self.cpu_info
 			kernel = "__global__ void "+ self.global_func + "_" + str(len(self.modules)+1) + "(" + self.kernel_args + "){\n"
 			self.ismap.append(True)
 			self.threads_dec = [False, False, False]
@@ -386,14 +409,6 @@ class ur_cuda:
 		self.device_body_buff +="){\n"
 #		print "DBB",self.device_body_buff
 
-#	START HERE!!!
-#				device_keys.index()
-			
-# Need to complete here!!
-# Check whether the variables are declared or not.
-	def checkchars(self, var):
-		return False
-
 # convert the list into string
 	def stringize(self, stmt):
 		phrase = ''
@@ -458,6 +473,12 @@ class ur_cuda:
 			ideq = stmt.index('=')
 			commavarid = [-1]
 			commavalid = [ideq]
+			if self.return_kernel == False:
+				for i in range(len(stmt[ideq:])):
+					if self.arguments.count(stmt[i+ideq]) > 0 and self.moved.count(stmt[i+ideq]) < 1:
+						item = stmt[i + ideq]
+						self.moved.append(item)
+						self.cuda_exe.htod(item)
 			tmp = stmt
 			for k in tmp:
 				if k == ',' and tmp.index(k) < ideq:
@@ -655,7 +676,7 @@ class ur_cuda:
 		return str_for
 
 	def execute(self):
-		tmp = execu.cu_exe()
+		self.cuda_exe = execu.cu_exe()
 		sh = shlex.shlex(self.code)
 		i = sh.get_token()
 		self.keys = [i]
@@ -689,11 +710,6 @@ class ur_cuda:
 		self.sentences.remove(self.sentences[1])
 		self.sentences.remove(self.sentences[-2])
 #		print self.kernel, "Entering body()"
-		self.body()
-		self.kernel = self.kernel + "}"
-#		self.print_cu()
-		self.arg_nam.pop(-1)
-		self.kernel_final.append(self.kernel)
 		if self.return_kernel == False:
 			np_args = []
 			np_arg_nam = []
@@ -701,18 +717,24 @@ class ur_cuda:
 				if str(type(self.args[i])).find('numpy') != -1:
 					np_args.append(self.args[i])
 					np_arg_nam.append(self.arg_nam[i])
-			tmp.start(np_args,np_arg_nam)
+			self.cuda_exe.malloc(np_args,np_arg_nam)
+		self.body()
+		self.kernel = self.kernel + "}"
+#		self.print_cu()
+		self.arg_nam.pop(-1)
+		self.kernel_final.append(self.kernel)
+		if self.return_kernel == False:
 #			print self.kernel_final, len(self.kernel_final)
 			for i in range(len(self.kernel_final)):
 #				if self.ismap[i] == False:
-				tmp.exe_cu(self.kernel_final[i], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
+				self.cuda_exe.exe_cu(self.kernel_final[i], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
 				if self.num_mod > 0:
 					self.Urmod(self.modules[i],tmp.get_cu_args())
 					self.num_mod = self.num_mod - 1
 #				else:
 #					tmp.exe_cu(self.kernel_final[i], self.map_func[0], self.threads, self.blocks, self.device_dyn_p, self.is_shared)
 #			tmp.exe_cu(self.kernel_final[-1], self.global_func +"_"+str(len(self.kernel_final)), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
-			return tmp.get_returns(self.returns)
+			return self.cuda_exe.get_returns(self.returns)
 		elif self.return_kernel == True:
 #			print self.ismap
 			return self.kernel_final
