@@ -248,29 +248,27 @@ class ur_cuda:
 		if stmt.count('else') > 0:
 			kernel = kernel + "else{\n"
 			return kernel
-		if stmt.count('cpu') > 0:
+		if stmt.count('Urmod') > 0:
 			self.num_mod = self.num_mod + 1
 			self.modules.append(stmt[2:])
-#			print self.num_mod, self.modules
 			self.kernel_final.append(kernel+"}")
-			self.cpu_id = self.cpu_id + 1
-			self.cpu_empty['id'] = self.cpu_id
-			self.cpu_empty['ln'] = self.sentences.index(sentence)
-			eq_id = stmt.index('=')
-			if eq_id > 0:
-				print "There are returns"
-			self.cpu_empty['return'].append(stmt[eq_id-1])
+#			self.cpu_id = self.cpu_id + 1
+#			self.cpu_empty['id'] = self.cpu_id
+#			self.cpu_empty['ln'] = self.sentences.index(sentence)
+#			eq_id = stmt.index('=')
+#			if eq_id > 0:
+#				print "There are returns"
+#			self.cpu_empty['return'].append(stmt[eq_id-1])
 # If a data array is not sent to gpu, we use it in cpu function
-			func_name = stmt.index('cpu') + 2
-			for i in stmt[func_name+2:-1]:
-				if i is not ',':
-					self.cpu_empty['args'].append(i)
-#			self.cpu_empty['args'].append()
-			stmt.remove(stmt[func_name-2])
-			stmt.remove(stmt[func_name-2])
-			self.cpu_empty['src'] = stmt
-			self.cpu_info.append(self.cpu_empty)
-			print self.cpu_info
+#			func_name = stmt.index('cpu') + 2
+#			for i in stmt[func_name+2:-1]:
+#				if i is not ',':
+#					self.cpu_empty['args'].append(i)
+#			stmt.remove(stmt[func_name-2])
+#			stmt.remove(stmt[func_name-2])
+#			self.cpu_empty['src'] = stmt
+#			self.cpu_info.append(self.cpu_empty)
+#			print self.cpu_info
 			kernel = "__global__ void "+ self.global_func + "_" + str(len(self.modules)+1) + "(" + self.kernel_args + "){\n"
 			self.ismap.append(True)
 			self.threads_dec = [False, False, False]
