@@ -34,7 +34,7 @@ class cu_exe:
 		else:
 			func(*self.cu_args,block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]))
 
-	def start(self,args,arg_nam):
+	def malloc(self,args,arg_nam):
 		try:
 			import pycuda.driver as cuda
 			import pycuda.autoinit
@@ -45,7 +45,15 @@ class cu_exe:
 		self.argl = len(args)
 		for i in range(len(args)):
 			self.cu_args.append(cuda.mem_alloc(args[i].nbytes))
-			cuda.memcpy_htod(self.cu_args[i],self.args[i])
+		
+	def htod(self,arg_nam):
+		try:
+			import pycuda.driver as cuda
+			import pycuda.autoinit
+		except:
+			return
+		index = self.nam_args.index(arg_nam)
+		cuda.memcpy_htod(self.cu_args[index],self.args[index])
 
 	def flags(self):
 		for i in self.nam_args:
