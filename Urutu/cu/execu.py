@@ -71,20 +71,23 @@ class cu_exe:
 	def get_cu_args(self):
 		return self.cu_args[:]
 
-	def get_returns(self,returns):
-		self.retl = len(returns)
-		self.nam_returns = returns
-		self.flags()
-		self.dtoh()
-#		self.dfree()
+	def get_returns(self,returns,moved):
+		for i in returns:
+			if i in moved:
+				self.dtoh(i)
+			ret_id = self.nam_args.index(i)
+			self.returns.append(self.args[ret_id])				
 		return self.returns
 
-	def dtoh(self):
-		import pycuda.driver as cuda
-		import pycuda.autoinit
-		for i in range(len(self.id_ret)):
-			self.returns.append(self.args[self.id_ret[i]])
-			cuda.memcpy_dtoh(self.returns[i],self.cu_args[self.id_ret[i]])
+	def dtoh(self,nam):
+		try:
+			import pycuda.driver as cuda
+			import pycuda.autoinit
+		except:
+			return
+		var_id = self.nam_args.index(nam)
+		cuda.memcpy_dtoh(self.args[var_id], self.cu_args[var_id]);
+#		cuda.memcpy_dtoh(self.returns[i],self.cu_args[self.id_ret[i]])
 
 
 # End of File

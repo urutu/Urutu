@@ -3,7 +3,8 @@
 # This file converts Python code to CUDA code
 # Modified: 22 Jan 2015
 
-import inspect,shlex
+import shlex,inspect
+from inspect import getcallargs
 import numpy as np
 import execu
 import threads, blocks, declare, grammar, modules
@@ -76,9 +77,10 @@ class ur_cuda:
 	moved = []
 	cuda_exe = 0
 #The structure is a tuple {'order of calling':,'line number':,'return':,'source':, 'args':,'htod':, 'dtoh':, }
-	cpu_empty = {'id':0, 'ln':0, 'return':[], 'src':"", 'args': [], 'htod': [], 'dtoh': []}
+	cpu_empty = {'id':0, 'ln':0, 'return':[], 'src':"", 'args': [], 'htod': [], 'dtoh': [], 'isnext': False}
 	cpu_id = 0
 	cpu_info = []
+	gpu_id = 1
 
 	def __init__(self, fn, args):
 		stri = inspect.getsource(fn)
@@ -167,6 +169,32 @@ class ur_cuda:
 			kernel, self.device_blocks_dec[2] = blocks.bz(self.device_blocks_dec[2], kernel)
 		return kernel
 
+	def remove_workitems(self):
+		if self.var_nam.count('tx') > 0:
+			self.var_nam.remove('tx')
+		if self.var_nam.count('ty') > 0:
+			self.var_nam.remove('ty')
+		if self.var_nam.count('tz') > 0:
+			self.var_nam.remove('tz')
+		if self.var_nam.count('bx') > 0:
+			self.var_nam.remove('bx')
+		if self.var_nam.count('by') > 0:
+			self.var_nam.remove('by')
+		if self.var_nam.count('bz') > 0:
+			self.var_nam.remove('bz')
+		if self.var_nam.count('Tx') > 0:
+			self.var_nam.remove('Tx')
+		if self.var_nam.count('Ty') > 0:
+			self.var_nam.remove('Ty')
+		if self.var_nam.count('Tz') > 0:
+			self.var_nam.remove('Tz')
+		if self.var_nam.count('Bx') > 0:
+			self.var_nam.remove('Bx')
+		if self.var_nam.count('By') > 0:
+			self.var_nam.remove('By')
+		if self.var_nam.count('By') > 0:
+			self.var_nam.remove('By')
+
 	def inspect_it(self,sentence,kernel):
 #		print "Inside inspect_it()",sentence,kernel
 		phrase = sentence.split('\t')
@@ -248,27 +276,60 @@ class ur_cuda:
 		if stmt.count('else') > 0:
 			kernel = kernel + "else{\n"
 			return kernel
+		if stmt.count('cpu') > 0:
+			self.kernel_final.append(kernel+"}")
+			cpu_empty = {'id':0, 'ln':0, 'return':[], 'src':"", 'args': [], 'htod': [], 'dtoh': []}
+			self.cpu_id = self.cpu_id + 1
+			cpu_empty['id'] = self.cpu_id
+			cpu_empty['ln'] = self.sentences.index(sentence)
+			eq_id = stmt.index('=')
+			if eq_id > 0:
+				cpu_empty['return'].append(stmt[0])
+#				if self.moved.count() 
+# If a data array is not sent to gpu, we use it in cpu function
+			func_name = stmt.index('cpu') + 2
+			for i in stmt[func_name+2:-1]:
+				if i is not ',':
+					if self.arguments.count(i) > 0:
+						cpu_empty['args'].append(i)
+						if self.moved.count(i) > 0:
+							cpu_empty['dtoh'].append(i)
+					else:
+						print "Pass the array accessed by the CPU function to Urutu Kernel"
+			stmt.remove(stmt[func_name-2])
+			stmt.remove(stmt[func_name-2])
+			cpu_empty['src'] = stmt
+			cpu_empty['isnext'] = False
+			if len(self.cpu_info) == 0:
+				self.run_gpu(self.kernel_final[-1])
+				self.gpu_id+=1
+				kernel = "__global__ void "+ self.global_func + "_" + str(self.gpu_id) + "(" + self.kernel_args + "){\n"
+				self.ismap.append(True)
+				self.threads_dec = [False, False, False]
+				self.blocks_dec = [False, False, False]
+				self.remove_workitems()
+				self.kernel = kernel
+			elif self.cpu_info[-1]['ln'] + 1 != cpu_empty['ln']:
+				self.cpu_info[-1]['isnext'] = False
+				print "Running on CPU"
+				self.run_cpu()
+				self.kernel_final.append(kernel+"}")
+				self.gpu_id+=1
+				kernel = "__global__ void "+ self.global_func + "_" + str(self.gpu_id) + "(" + self.kernel_args + "){\n"
+				self.ismap.append(True)
+				self.threads_dec = [False, False, False]
+				self.blocks_dec = [False, False, False]
+				self.remove_workitems()
+				self.kernel = kernel
+			elif self.cpu_info[-1]['ln'] + 1 == cpu_empty['ln']:
+				self.cpu_info[-1]['isnext'] = True
+			self.cpu_info.append(cpu_empty)
+			return kernel
+
 		if stmt.count('Urmod') > 0:
 			self.num_mod = self.num_mod + 1
 			self.modules.append(stmt[2:])
 			self.kernel_final.append(kernel+"}")
-#			self.cpu_id = self.cpu_id + 1
-#			self.cpu_empty['id'] = self.cpu_id
-#			self.cpu_empty['ln'] = self.sentences.index(sentence)
-#			eq_id = stmt.index('=')
-#			if eq_id > 0:
-#				print "There are returns"
-#			self.cpu_empty['return'].append(stmt[eq_id-1])
-# If a data array is not sent to gpu, we use it in cpu function
-#			func_name = stmt.index('cpu') + 2
-#			for i in stmt[func_name+2:-1]:
-#				if i is not ',':
-#					self.cpu_empty['args'].append(i)
-#			stmt.remove(stmt[func_name-2])
-#			stmt.remove(stmt[func_name-2])
-#			self.cpu_empty['src'] = stmt
-#			self.cpu_info.append(self.cpu_empty)
-#			print self.cpu_info
 			kernel = "__global__ void "+ self.global_func + "_" + str(len(self.modules)+1) + "(" + self.kernel_args + "){\n"
 			self.ismap.append(True)
 			self.threads_dec = [False, False, False]
@@ -277,6 +338,8 @@ class ur_cuda:
 			return kernel
 		else:
 #			print "Entering Checkvars",phrase
+			if(len(self.cpu_info)) > 0 and self.return_kernel == False:
+				self.run_cpu()
 			return self.checkvars(stmt,phrase[-1],kernel)
 #		print stmt, self.tabs
 
@@ -479,6 +542,7 @@ class ur_cuda:
 						item = stmt[i + ideq]
 						self.moved.append(item)
 						self.cuda_exe.htod(item)
+				self.moved.append(stmt[0])
 			tmp = stmt
 			for k in tmp:
 				if k == ',' and tmp.index(k) < ideq:
@@ -675,6 +739,48 @@ class ur_cuda:
 #			print self.type_vars, self.var_nam
 		return str_for
 
+	def get_cpusrc(self,src,func_nam):
+		imp = src.split('import')
+		tmp = ""
+		for i in range(len(imp)):
+			if i == len(imp)-1:
+				tmp += imp[i].split('\n')[0] + '\n'
+			else:
+				tmp += imp[i] + "import"
+		src = tmp + 'def ' + func_nam + src.split('def '+func_nam)[-1]
+		src = src.split('\n\n')[0]
+		return src
+		
+
+	def run_cpu(self):
+		for k in range(len(self.cpu_info)):
+			for j in self.cpu_info[k]['dtoh']:
+				self.cuda_exe.dtoh(j)
+				if j in self.moved:
+					self.moved.remove(j)
+			src = self.cpu_info[k]['src']
+			eq_id = -1
+			if src.count('=') > 0:
+				eq_id = src.index('=')
+			par_id = src.index("(")
+			name = self.stringize(src[eq_id+1:par_id])
+			load_stack = inspect.stack()
+			f = open(str(load_stack[-1][1]),'r')
+			code_global = compile(self.get_cpusrc(f.read(),name),'<string>','exec')
+			exec code_global
+			code = "self.args[self.arguments.index('"+self.stringize(src[0])+"')]"+self.stringize(src[1:eq_id+1]) + name
+#			print getcallargs(average,self.args[0])
+			for i in src[eq_id+2:]:
+				if i in self.arguments:
+					code = code + "self.args[self.arguments.index('"+str(i)+"')]"
+				else:
+					code = code + i
+			exec code
+		self.cpu_info = []
+
+	def run_gpu(self,gpu_data):
+		self.cuda_exe.exe_cu(gpu_data, self.global_func +"_"+str(self.gpu_id), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
+
 	def execute(self):
 		self.cuda_exe = execu.cu_exe()
 		sh = shlex.shlex(self.code)
@@ -724,17 +830,16 @@ class ur_cuda:
 		self.arg_nam.pop(-1)
 		self.kernel_final.append(self.kernel)
 		if self.return_kernel == False:
+			self.run_gpu(self.kernel_final[-1])
 #			print self.kernel_final, len(self.kernel_final)
-			for i in range(len(self.kernel_final)):
+#			for i in range(len(self.kernel_final)):
 #				if self.ismap[i] == False:
-				self.cuda_exe.exe_cu(self.kernel_final[i], self.global_func +"_"+str(2*i+1), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
-				if self.num_mod > 0:
-					self.Urmod(self.modules[i],tmp.get_cu_args())
-					self.num_mod = self.num_mod - 1
-#				else:
-#					tmp.exe_cu(self.kernel_final[i], self.map_func[0], self.threads, self.blocks, self.device_dyn_p, self.is_shared)
-#			tmp.exe_cu(self.kernel_final[-1], self.global_func +"_"+str(len(self.kernel_final)), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
-			return self.cuda_exe.get_returns(self.returns)
+				
+#				if self.num_mod > 0:
+#					self.Urmod(self.modules[i],tmp.get_cu_args())
+#					self.num_mod = self.num_mod - 1
+
+			return self.cuda_exe.get_returns(self.returns, self.moved)
 		elif self.return_kernel == True:
 #			print self.ismap
 			return self.kernel_final
