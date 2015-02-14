@@ -1,29 +1,32 @@
-# The cpu test file
+from Urutu import *
+import numpy as np
 
-import cpu
-
-def Urutu(arg):
-    def wrap(fn):
-        if arg == "cpu":
-            def inner(*args, **kargs):
-                print fn,args
-                cpu_ = cpu.cpu_run(fn,args)
-                return cpu_.run()
-        return inner
-    return wrap
+def average(c):
+	d = 0
+	for i in c:
+		d+=i
+	return d
 
 
-@Urutu("cpu")
-def run(a,b,c):
-    __shared is x
-    c[tx] = a[tx] + b[tx]
-    print c[tx]
-    if 1 < 2:
-        print "LOL"
-    return c
+def f():
+	sum = 0
+	print sum + 1
 
-if __name__ == "__main__":
-    a = [1,2,3,4]
-    b = [4,3,2,1]
-    c = [0,0,0,0]
-    c = run([len(a),1,1],[1,1,1],a,b,c)
+
+# Only args can be sent to and fro from CPU function
+@Urutu("gpu")
+def mul(a, b, c, d, e, f):
+	c[tx] = a[tx] + b[tx]
+	d[0] = cpu.average(c)
+	e[0] = cpu.average(b)
+	f[tx] = e[0] * c[tx]
+	return d,e,f
+
+a = np.ones(100)
+b = np.ones(100)
+c = np.empty_like(a)
+d = np.ones(1)
+e = np.empty_like(d)
+f = np.empty_like(a)
+
+print a, b, mul([100,1,1],[1,1,1],a,b,c,d,e,f)
