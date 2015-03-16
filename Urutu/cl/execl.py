@@ -4,14 +4,14 @@
 # This file contains the execution of OpenCL code using PyOpenCL
 # Modified: 18 Jan 2014
 
-import pyopencl as cl
+
 import numpy as np
 import numpy.linalg as la
 
 class cl_exe:
-	ctx = cl.create_some_context()
-	queue = cl.CommandQueue(ctx)
-	mf = cl.mem_flags
+	ctx = 0
+	queue = 0
+	mf = 0
 	cl_args = []
 	args = []
 	argl = 0
@@ -23,6 +23,13 @@ class cl_exe:
 	is_alloc = []
 
 	def exe_cl(self,stringg,func_name,threads,blocks):
+		try:
+			import pyopencl as cl
+		except:
+			return
+		self.ctx = cl.create_some_context()
+		self.queue = cl.CommandQueue(self.ctx)
+		self.mf = cl.mem_flags
 		prg = cl.Program(self.ctx,stringg).build()
 		if self.argl == 1:
 			prg.CL_kernel(self.queue,threads,blocks, self.cl_args[0])

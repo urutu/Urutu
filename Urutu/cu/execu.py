@@ -40,6 +40,7 @@ class cu_exe:
 			import pycuda.autoinit
 		except:
 			return
+		print self.args
 		self.args = args
 		self.nam_args = arg_nam
 		self.argl = len(args)

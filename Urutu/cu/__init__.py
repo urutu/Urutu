@@ -154,7 +154,7 @@ class ur_cuda:
 
 	def declare_workitems(self,keys,kernel):
 #		The keys are strings
-#		print "\n\nDEC_WORKITEMS", keys, self.device_threads_dec, self.device_blocks_dec
+		print "\n\nDEC_WORKITEMS", keys, self.device_threads_dec, self.device_blocks_dec
 		if keys.find('tx') > -1:
 			kernel, self.device_threads_dec[0] = threads.tx(self.device_threads_dec[0], kernel)
 		if keys.find('ty') > -1:
@@ -482,7 +482,7 @@ class ur_cuda:
 
 # Checking the type of variable to be created
 	def checktype(self,var,val):
-#		print var, val
+		print "In Checktype:", var, val
 		if val.count('.') == 1:
 			return 'float ', self.stringize(var[:]) , '',  self.stringize(val[:])
 		try:
@@ -520,9 +520,22 @@ class ur_cuda:
 			else:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 
+	def movedata(self, args):
+		if self.return_kernel == False:
+			for i in args:
+				if self.moved.count(i) < 1:
+					self.cuda_exe.htod(i)
+					self.moved.append(args)
+			self.moved = list(set(self.moved))
+
+	def addtovarnam(self, var, typevar):
+		for i in range(len(var)):
+			if self.var_nam.count(var[i]) < 1:
+				self.var_nam.append([i])
+				self.type_vars.append(typevar[i])
+
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase,kernel):
-#		print "Inside Dec vars",phrase,stmt
 #		if kernel[-2] == '}':
 #			kernel = kernel[:-2]
 #			kernel += "\n"
@@ -531,18 +544,25 @@ class ur_cuda:
 #			print "Adding return",kernel
 			return kernel
 		elif stmt.count('=') == 0:
+			kernel = kernel + str(stmt[0])
+			for i in stmt[1:]:
+				if i is ")":
+					kernel = kernel + ");\n"
+				elif i is "(":
+					kernel = kernel + "("
+				elif i is ",":
+					kernel = kernel + " ,"
+				else:
+					if self.var_nam.count(i) > 0:
+							self.movedata(i)
+							kernel = kernel + str(i)
+					else:
+						print "Variable ", i ," not declared"
 			return kernel
 		else:
 			ideq = stmt.index('=')
 			commavarid = [-1]
 			commavalid = [ideq]
-			if self.return_kernel == False:
-				for i in range(len(stmt[ideq:])):
-					if self.arguments.count(stmt[i+ideq]) > 0 and self.moved.count(stmt[i+ideq]) < 1:
-						item = stmt[i + ideq]
-						self.moved.append(item)
-						self.cuda_exe.htod(item)
-				self.moved.append(stmt[0])
 			tmp = stmt
 			for k in tmp:
 				if k == ',' and tmp.index(k) < ideq:
@@ -551,25 +571,60 @@ class ur_cuda:
 				if k == ',' and tmp.index(k) > ideq:
 					commavalid.append(tmp.index(k))
 					tmp[tmp.index(k)] = ''
-#			print tmp
 			commacount = len(commavarid)
 			commavalid.append(len(tmp))
 			commavarid.append(ideq)
+			line = ""
 			for i in range(commacount):
-#				print self.var_nam
 				if self.var_nam.count(i) == 0 and stmt.index('=') > i:
-#					if self.device_var_nam[-1].count(stmt[commavarid[i]+1]) > 0:
-
 					ret_checktype = self.checktype(stmt[commavarid[i]+1:commavarid[i+1]],stmt[commavalid[i]+1:commavalid[i+1]])
-					kernel += ret_checktype[0] + ret_checktype[1] + ret_checktype[2] + "= " + ret_checktype[3] + ";\n"
+					if ret_checktype[0] == '':		# Which means, it is a function
+						for i in stmt[::-1]:
+							if i is ")":
+								line = i + line
+							elif i is "(":
+								line = i + line
+							elif i is "=":
+								line = i + line
+							elif i is '':
+								line = "," + line
+							else:
+								if self.moved.count(i) < 1:
+									if self.arguments.count(i) > 0:
+										self.movedata(i)
+										line = i + line
+									elif stmt[ideq+1] == i:
+										line = i + line
+										self.check_urutu(i, stmt)
+									else:
+										line = i + line
+						print "Line: ",line
+						kernel += line + ";\n"
+					else:
+						kernel += ret_checktype[0] + ret_checktype[1] + ret_checktype[2] + "= " + ret_checktype[3] + ";\n"
 					if self.device_scope == False:
-						self.var_nam.append(ret_checktype[1])
-						self.type_vars.append(ret_checktype[0])
+						self.addtovarnam(ret_checktype[1], ret_checktype[0])
 					elif self.device_scope == True:
 						self.device_var_nam[-1].append(ret_checktype[1])
 						self.device_type_vars[-1].append(ret_checktype[0])
-#			print "Exiting decvars",kernel
 			return kernel
+
+
+	def get_urutusrc(self):
+		exec "from test_multi import add,a,b,c"
+		print "Variables"
+		_a = self.args[0]
+		_b = self.args[1]
+		_c = self.args[2]
+		print type(self.args[0])
+		exec "print type(_a)"
+		exec "print add(True,a,b,c)"
+		print "DONE"
+
+	def check_urutu(self, name, stmt):
+		print "Checking Urutu: ", stmt
+		self.get_urutusrc()
+		print "Checked Urutu"
 
 #	CHECKVARS here!!
 	def checkvars(self,stmt,phrase,kernel):
@@ -633,65 +688,77 @@ class ur_cuda:
 			if comma == True:
 				if "int64*" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = ", long* " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "long*"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "long*"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "int32*" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = ", int* " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "int*"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "int*"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "float32*" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = ", float* " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "float*"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "float*"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "float64*" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = ", double* " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "double*"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "double*"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "int" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = ", int " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "int"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "int"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "float" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = ", float " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "float"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "float"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 			elif comma == False:
 				if "int64*" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = " long* " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "long*"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "long*"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "int32*" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = " int* " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "int*"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "int*"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "float32*" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = " float* " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "float*"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "float*"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "float64*" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = " double* " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "double*"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "double*"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "int" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = " int " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "int"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "int"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 				elif "float" == self.type_args[len(self.arguments) - 1]:
 					kernel_arg = " float " + self.keys[control]
-					self.type_vars[len(self.arguments) - 1] = "float"
-					self.arg_nam[-1] = self.keys[control]
-					self.arg_nam.append("")
+					if self.arg_nam.count(self.keys[control]) < 1:
+						self.type_vars[len(self.arguments) - 1] = "float"
+						self.arg_nam[-1] = self.keys[control]
+						self.arg_nam.append("")
 			self.kernel_args += kernel_arg
 			kernel += kernel_arg
 			self.var_nam.append(self.keys[control])
@@ -799,7 +866,6 @@ class ur_cuda:
 				if self.keys[control] == ',':
 					control = control + 1
 				self.kernel = self.defargs(comma, control, self.kernel)
-#				print self.type_vars
 				comma = True
 				control = control + 1
 			ret = len(self.keys) - self.keys[::-1].index('return')
@@ -830,6 +896,7 @@ class ur_cuda:
 		self.arg_nam.pop(-1)
 		self.kernel_final.append(self.kernel)
 		if self.return_kernel == False:
+			print self.kernel_final[-1]
 			self.run_gpu(self.kernel_final[-1])
 #			print self.kernel_final, len(self.kernel_final)
 #			for i in range(len(self.kernel_final)):
@@ -854,7 +921,7 @@ class ur_cuda:
 		print self.kernel
 		print self.threads
 		print self.blocks
-		print self.func_name
+#		print self.func_name
 		print self.code
 		print self.words
 		print self.sentences
