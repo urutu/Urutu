@@ -28,7 +28,6 @@ class cu_exe:
 		else:
 			mod=SourceModule(stringg)
 		func=mod.get_function(func_name)
-#		print string, func_name
 		if is_shared == True:
 			func(*self.cu_args,block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]),shared=16*1024)
 		else:
@@ -40,7 +39,6 @@ class cu_exe:
 			import pycuda.autoinit
 		except:
 			return
-		print self.args
 		self.args = args
 		self.nam_args = arg_nam
 		self.argl = len(args)
@@ -75,9 +73,11 @@ class cu_exe:
 	def get_returns(self,returns,moved):
 		for i in returns:
 			if i in moved:
+				print i
 				self.dtoh(i)
 			ret_id = self.nam_args.index(i)
-			self.returns.append(self.args[ret_id])				
+			self.returns.append(self.args[ret_id])	
+		self.dfree()
 		return self.returns
 
 	def dtoh(self,nam):
