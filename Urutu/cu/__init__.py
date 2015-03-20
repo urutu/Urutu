@@ -491,56 +491,60 @@ class ur_cuda:
 			if self.var_nam.count(var[0]) > 0:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 			else:
-				return 'float ', self.stringize(var[:]) , '',  self.stringize(val[:])
+				return 'float ', '', self.stringize(var[:]) ,  self.stringize(val[:])
 		elif val[0] == 'int' or val[0] == 'float' or val[0] == 'char' or val[0] == 'double' or val[0] == 'bool' or val[0] == 'long':
 			return '/**/','', self.stringize(var[:]), self.stringize(val[:])
 		try:
 			int(self.stringize(val))
-			return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
+			return 'int ', '', self.stringize(var[:]), self.stringize(val[:])
 		except:
 			if self.stringize(val).find('"') != -1:
-				return 'char ', self.stringize(var[:]), '[]', self.stringize(val[:])
+				return 'char ', '', self.stringize(var[:]) + '[]', self.stringize(val[:])
 			elif self.stringize(val).find("'") != -1:
 				val = str(val[0]).split("'")
 				quote = ['"']
 				quote.append(val[1])
 				quote.append('"')
-				return 'char ' , self.stringize(var[:]), '[]', self.stringize(quote)
+				return 'char ' , '', self.stringize(var[:]) +  '[]', self.stringize(quote)
 			elif val.count('[') > 0 or var.count(']') > 0:
+				if var.count('[') > 0:
+					var_id = var.index('[')
+				else:
+					var_id = -1
 				if self.var_nam.count(var[0]) == 0 and self.device_scope == False:
-					return self.type_vars[self.var_nam.index(val[0])][:-1],' ', self.stringize(var[:]), self.stringize(val[:])
+					return self.type_vars[self.var_nam.index(val[0])][:-1] + ' ','', self.stringize(var[:]), self.stringize(val[:])
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
 			elif val.count('+') > 0 or val.count('*') > 0 or val.count('-') > 0:
 				if self.device_var_nam[-1].count(var[0]) == 0:
 #					print device_var_nam[-1], var
-					return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
+					return 'int ', '', self.stringize(var[:]),  self.stringize(val[:])
 				if self.var_nam.count(var[0]) == 0 and self.device_scope == False:
-					return 'int ', self.stringize(var[:]), '', self.stringize(val[:])
+					return 'int ', '', self.stringize(var[:]), self.stringize(val[:])
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
 			elif val.count('/') > 0:
-				return 'float ', self.stringize(var[:]), '', self.stringize(val[:])
+				return 'float ', '', self.stringize(var[:]), self.stringize(val[:])
 			elif self.var_nam.count(val[0]) > 0 and self.var_nam.count(var) == 0:
 				id = self.var_nam.index(val[0])
-				return self.stringize(self.type_vars[id]), '', self.stringize(var), self.stringize(val)
+				return self.stringize(self.type_vars[id])+' ', '', self.stringize(var), self.stringize(val)
 			elif val[0] == "int" or val[0] == "float":
 				return val[0]+' ', '', self.stringize(var), self.stringize(val)
 			else:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 
 	def movedata(self, args):
-		for i in args:
-			if self.moved.count(i) < 1:
-				if self.return_kernel == False:
-					self.cuda_exe.htod(i)
-				self.moved.append(args)
+#		for i in args:
+		if self.moved.count(args) < 1:
+			if self.return_kernel == False:
+				self.cuda_exe.htod(args)
+			self.moved.append(args)
 		self.moved = list(set(self.moved))
 
 	def addtovarnam(self, var, typevar):
 		for i in range(len(var)):
 			if self.var_nam.count(var[i]) < 1:
-				self.var_nam.append([i])
+				self.var_nam.append(var[i])
 				self.type_vars.append(typevar[i])
 
 # a = 10 type variables are declared here!
@@ -614,7 +618,7 @@ class ur_cuda:
 					else:
 						kernel += ret_checktype[0] + ret_checktype[1] + ret_checktype[2] + "= " + ret_checktype[3] + ";\n"
 					if self.device_scope == False:
-						self.addtovarnam(ret_checktype[1], ret_checktype[0])
+						self.addtovarnam(ret_checktype[2:3], ret_checktype[0:1])
 					elif self.device_scope == True:
 						self.device_var_nam[-1].append(ret_checktype[1])
 						self.device_type_vars[-1].append(ret_checktype[0])
