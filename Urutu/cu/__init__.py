@@ -245,8 +245,6 @@ class ur_cuda:
 			if stmt.count('=') > 0:
 				id_eq = stmt.index('=')
 				type_, ptr_, var_, val_ = self.checktype(stmt[:id_eq],stmt[id_eq+1:])
-				self.var_nam.append(ptr_)
-				self.type_vars.append(type_)
 				kernel += type_+ptr_+var_ + "= " + val_ +";\n"
 				return kernel
 		if stmt.count('Bx') == 1 or stmt.count('By') == 1 or stmt.count('Bz') == 1:
@@ -491,12 +489,22 @@ class ur_cuda:
 			if self.var_nam.count(var[0]) > 0:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 			else:
-				return 'float ', '', self.stringize(var[:]) ,  self.stringize(val[:])
+				self.var_nam.append(var[0])
+				_type = 'float'
+				self.type_vars.append(_type)
+				return _type + ' ', '', self.stringize(var[:]) ,  self.stringize(val[:])
 		elif val[0] == 'int' or val[0] == 'float' or val[0] == 'char' or val[0] == 'double' or val[0] == 'bool' or val[0] == 'long':
-			return '/**/','', self.stringize(var[:]), self.stringize(val[:])
+			if var_nam.count(var[0]) < 0:
+				_type = val[0]
+				self.var_nam.append(var[0])
+				self.type_vars.append(_type)
+				return _type + ' ','', self.stringize(var[:]), self.stringize(val[:])
 		try:
 			int(self.stringize(val))
-			return 'int ', '', self.stringize(var[:]), self.stringize(val[:])
+			self.var_nam.append(var[0])
+			_type = 'int'
+			self.type_vars.append(_type)
+			return _type +' ', '', self.stringize(var[:]), self.stringize(val[:])
 		except:
 			if self.stringize(val).find('"') != -1:
 				return 'char ', '', self.stringize(var[:]) + '[]', self.stringize(val[:])
@@ -512,15 +520,25 @@ class ur_cuda:
 				else:
 					var_id = -1
 				if self.var_nam.count(var[0]) == 0 and self.device_scope == False:
-					return self.type_vars[self.var_nam.index(val[0])][:-1] + ' ','', self.stringize(var[:]), self.stringize(val[:])
+					_type = 0
+					if val[1] == '[':
+						_type = self.type_vars[self.var_nam.index(val[0])][:-1]
+						self.addtovarnam(var[0], _type[:])
+					else:
+						_type = self.type_vars[self.var_nam.index(val[0])]
+						self.addtovarnam(var[0], _type[:])
+					return _type + ' ','', self.stringize(var[:]), self.stringize(val[:])
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
 			elif val.count('+') > 0 or val.count('*') > 0 or val.count('-') > 0:
-				if self.device_var_nam[-1].count(var[0]) == 0:
+				if self.device_var_nam[-1].count(var[0]) == 0 and self.device_scope == True:
 #					print device_var_nam[-1], var
 					return 'int ', '', self.stringize(var[:]),  self.stringize(val[:])
 				if self.var_nam.count(var[0]) == 0 and self.device_scope == False:
-					return 'int ', '', self.stringize(var[:]), self.stringize(val[:])
+					_type = self.type_vars[self.var_nam.index(val[0])]
+					self.type_vars.append(_type)
+					self.var_nam.append(var[0])
+					return _type + ' ', '', self.stringize(var[:]), self.stringize(val[:])
 				else:
 					return '','',self.stringize(var[:]), self.stringize(val[:])
 			elif val.count('/') > 0:
@@ -542,10 +560,15 @@ class ur_cuda:
 		self.moved = list(set(self.moved))
 
 	def addtovarnam(self, var, typevar):
-		for i in range(len(var)):
-			if self.var_nam.count(var[i]) < 1:
-				self.var_nam.append(var[i])
-				self.type_vars.append(typevar[i])
+		if type(var) is tuple:
+			if self.var_nam.count(var[0]) < 1:
+				self.var_nam.append(var[0])
+				self.type_vars.append(typevar[0])
+		else:
+			if self.var_nam.count(var) < 1:
+				self.var_nam.append(var)
+				self.type_vars.append(typevar)
+			
 
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase,kernel):
@@ -788,13 +811,15 @@ class ur_cuda:
 						self.type_vars.append(type_var_for)
 				else:
 					str_for = "for(int " + str(iterator)
-					var_for = words[ind+3]
+					self.var_nam.append(str(iterator))
+					self.type_vars.append('int')
 					str_for += " = 0; " + str(iterator) + " < "
 					range_id = words.index("range")
 					end_id = words.index(":")
 					for i in range(range_id+1,end_id):
 						str_for += str(words[i])
 					str_for += "; " + str(iterator) + "++){\n"
+					print str_for
 #					type_var_for = str(self.type_vars[self.var_nam.index(var_for)][:-1])
 #					self.var_nam.append(str(iterator))
 #					self.type_vars.append(type_var_for)
