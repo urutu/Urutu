@@ -4,7 +4,6 @@
 # Modified: 22 Jan 2015
 
 import shlex,inspect
-from inspect import getcallargs
 import numpy as np
 import execu
 import threads, blocks, declare, grammar, modules
