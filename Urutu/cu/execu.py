@@ -73,7 +73,6 @@ class cu_exe:
 	def get_returns(self,returns,moved):
 		for i in returns:
 			if i in moved:
-				print i
 				self.dtoh(i)
 			ret_id = self.nam_args.index(i)
 			self.returns.append(self.args[ret_id])	

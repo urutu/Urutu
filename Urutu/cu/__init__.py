@@ -484,7 +484,7 @@ class ur_cuda:
 
 # Checking the type of variable to be created
 	def checktype(self,var,val):
-		if val.count('.') == 1:
+		if val.count('.') > 0:
 			if self.var_nam.count(var[0]) > 0:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 			else:
@@ -818,11 +818,20 @@ class ur_cuda:
 					for i in range(range_id+1,end_id):
 						str_for += str(words[i])
 					str_for += "; " + str(iterator) + "++){\n"
-					print str_for
 #					type_var_for = str(self.type_vars[self.var_nam.index(var_for)][:-1])
 #					self.var_nam.append(str(iterator))
 #					self.type_vars.append(type_var_for)
 #			if words.count(',')
+			elif words.count(',') == 2:
+				str_for = "for(int " + str(iterator)
+				range_id = words.index('in')+1
+				range_for = words[range_id + 2]
+				str_for = str_for + "= " + range_for + "; "
+				str_for = str_for + str(iterator) + " < " + words[range_id+4] + "; "
+				str_for = str_for + str(iterator) + "+= "# + words[range_id+6] + "){"
+				for i in words[range_id + 6: -2]:
+					str_for += i
+				str_for += "){"
 		else:
 			str_for = "for(int _" + str(iterator)
 			var_for = words[words.index('in')+1]
@@ -938,7 +947,7 @@ class ur_cuda:
 #			print self.ismap
 			kernel = self.kernel_final
 			self.kernel_final = []
-			return self.kernel_final
+			return kernel
 
 	def print_cu(self):
 		print "In print_cu:"
