@@ -4,8 +4,6 @@ from Urutu import *
 
 @Urutu("gpu")
 def colortoblack(r,g,b,black):
-	def average(a,b,c):
-		return (a+b+c)/3
 	black[tx+bx*blockDim.x] = (r[tx+bx*blockDim.x] + b[tx+bx*blockDim.x] + g[tx+bx*blockDim.x])/3
 	return black
 
