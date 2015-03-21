@@ -1,9 +1,3 @@
-'''
-	const int numThreads = blockDim.x * gridDim.x;
-    const int threadID = blockIdx.x * blockDim.x + threadIdx.x;
-    for (int i = threadID; i < size; i += numThreads)
-        a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale); 
-'''
 
 from Urutu import *
 import numpy as np
