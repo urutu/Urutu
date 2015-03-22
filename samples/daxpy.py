@@ -9,8 +9,8 @@ def daxpy(d,x,y):
 
 def main():
 	N = 10000
-	x = np.random.randint(N)
-	y = np.random.randint(N)
+	x = np.random.randint(10, size = N)
+	y = np.random.randint(10, size = N)
 	d = np.empty_like(x)
 	print daxpy([500,1,1],[N/500,1,1],d,x,y)
 
