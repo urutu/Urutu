@@ -500,10 +500,13 @@ class ur_cuda:
 				return _type + ' ','', self.stringize(var[:]), self.stringize(val[:])
 		try:
 			int(self.stringize(val))
-			self.var_nam.append(var[0])
-			_type = 'int'
-			self.type_vars.append(_type)
-			return _type +' ', '', self.stringize(var[:]), self.stringize(val[:])
+			if self.var_nam.count(var[0]) > 0:
+				return ' ' , '', self.stringize(var[:]), self.stringize(val[:])
+			else:
+				self.var_nam.append(var[0])
+				_type = 'int'
+				self.type_vars.append(_type)
+				return _type +' ', '', self.stringize(var[:]), self.stringize(val[:])
 		except:
 			if self.stringize(val).find('"') != -1:
 				return 'char ', '', self.stringize(var[:]) + '[]', self.stringize(val[:])
