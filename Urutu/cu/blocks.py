@@ -18,7 +18,7 @@ def by(blocks_dec, kernel):
 
 def bz(blocks_dec, kernel):
 	if blocks_dec == False:
-		string = "int by = blockIdx.y;\n"
+		string = "int bz = blockIdx.z;\n"
 		kernel = kernel + string
 		blocks_dec = True
 	return kernel, blocks_dec
@@ -36,7 +36,7 @@ def blocks_decl(stmt, var_nam, var_val, blocks, type_vars):
 		var_nam.append(stmt[pos])
 		kernel += "int By = gridDim.y;\n"
 		type_vars.append("int")
-	if var_nam.count('Bz') < 1:
+	if var_nam.count('Bz') < 1 and stmt.count('Bz') > 0:
 		pos = stmt.index('Bz')
 		var_nam.append(stmt[pos])
 		kernel += "int Bz = gridDim.z;\n"

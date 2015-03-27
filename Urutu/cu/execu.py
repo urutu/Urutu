@@ -24,11 +24,10 @@ class cu_exe:
 		except:
 			return
 		if dyn_p is True:
-			mod=SourceModule(stringg, options=['-rdc=true'],linkers=['-lcudadevrt'])
+			mod=SourceModule(stringg, options=['-rdc=true','-lcudadevrt'])
 		else:
 			mod=SourceModule(stringg)
 		func=mod.get_function(func_name)
-#		print string, func_name
 		if is_shared == True:
 			func(*self.cu_args,block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]),shared=16*1024)
 		else:
@@ -76,7 +75,8 @@ class cu_exe:
 			if i in moved:
 				self.dtoh(i)
 			ret_id = self.nam_args.index(i)
-			self.returns.append(self.args[ret_id])				
+			self.returns.append(self.args[ret_id])	
+		self.dfree()
 		return self.returns
 
 	def dtoh(self,nam):
