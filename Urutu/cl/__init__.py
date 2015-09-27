@@ -53,6 +53,7 @@ class cl_test:
 	device_blocks_dec = [False, False, False]
 	return_kernel = False
 	modules = []
+	arg_mask = []
 
 	def __init__(self, fn, args):
 		stri = inspect.getsource(fn)
@@ -103,15 +104,30 @@ class cl_test:
 #			print self.__constant
 
 	def typeargs(self):
+		id = 0
+		self.args = list(self.args)
 		for arg in self.args:
-			j = str(type(arg[0])).split("'")
+			try:
+				j = str(type(arg[0])).split("'")
+			except:
+				j = str(type(arg)).split("'")
 			if 'numpy' in j[1]:
 				j = j[1].split(".")
 				self.type_args.append(j[1]+"*")
 				self.type_vars.append(j[1]+"*")
+				self.arg_mask.append(True)
 			else:
+				arg_type = type(self.args[id])
+				if type(1) == arg_type:
+					self.args[id] = np.int32(self.args[id])
+				if type(1.0) == arg_type:
+					self.args[id] = np.float32(self.args[id])
+				if type(long(1)) == arg_type:
+					self.args[id] = np.int64(self.args[id])
 				self.type_args.append(j[0])
 				self.type_vars.append(j[0])
+				self.arg_mask.append(False)
+			id = id + 1
 
 	def funcname_cl(self, control):
 		self.func_name = self.keys[control + 1]
@@ -179,7 +195,7 @@ class cl_test:
 		if self.keys.count('bz') > 0:
 			kernel, self.blocks_dec[2] = blocks.bz(self.blocks_dec[2], kernel)
 		if stmt.count('Tx') == 1 or stmt.count('Ty') == 1 or stmt.count('Tz') == 1:
-			threads.threads_decl(stmt, self.var_nam, self.var_val, self.threads)
+			threads.threads_decl(stmt, self.var_nam, self.var_val, self.threads, self.type_vars)
 			return kernel
 		if stmt.count('Bx') == 1 or stmt.count('By') == 1 or stmt.count('Bz') == 1:
 			blocks.blocks_decl(stmt, self.var_nam, self.var_val, self.blocks)
@@ -593,7 +609,7 @@ class cl_test:
 #		print self.var_nam, self.type_vars, self.__shared, self.__global
 #		print self.kernel
 		if self.return_kernel == False:
-			tmp.start(self.args,self.arg_nam)
+			tmp.start(self.args,self.arg_nam, self.arg_mask)
 			tmp.exe_cl(self.kernel_final[0], self.func_name, self.threads, self.blocks)
 			return tmp.get_returns(self.returns)
 		elif self.return_kernel == True:

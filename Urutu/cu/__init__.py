@@ -75,6 +75,7 @@ class ur_cuda:
 	map_func = []
 	moved = []
 	cuda_exe = 0
+	arg_mask = []
 #The structure is a tuple {'order of calling':,'line number':,'return':,'source':, 'args':,'htod':, 'dtoh':, }
 	cpu_empty = {'id':0, 'ln':0, 'return':[], 'src':"", 'args': [], 'htod': [], 'dtoh': [], 'isnext': False}
 	cpu_id = 0
@@ -126,6 +127,8 @@ class ur_cuda:
 #			print self.__constant
 
 	def typeargs(self):
+		id = 0
+		self.args = list(self.args)
 		for arg in self.args:
 			try:
 				j = str(type(arg[0])).split("'")
@@ -135,9 +138,19 @@ class ur_cuda:
 				j = j[1].split(".")
 				self.type_args.append(j[1]+"*")
 				self.type_vars.append(j[1]+"*")
+				self.arg_mask.append(True)
 			else:
+				arg_type = type(self.args[id])
+				if type(1) == arg_type:
+					self.args[id] = np.int32(self.args[id])
+				if type(1.0) == arg_type:
+					self.args[id] = np.float32(self.args[id])
+				if type(long(1)) == arg_type:
+					self.args[id] = np.int64(self.args[id])
 				self.type_args.append(j[1])
 				self.type_vars.append(j[1])
+				self.arg_mask.append(False)
+			id = id + 1
 
 	def funcname_cu(self,control):
 		func_name = self.keys[control + 1]
@@ -556,7 +569,7 @@ class ur_cuda:
 	def movedata(self, args):
 #		for i in args:
 		if self.moved.count(args) < 1:
-			if self.return_kernel == False:
+			if self.return_kernel == False and self.arg_mask[self.arg_nam.index(args)] == True:
 				self.cuda_exe.htod(args)
 			self.moved.append(args)
 		self.moved = list(set(self.moved))
@@ -929,7 +942,7 @@ class ur_cuda:
 				if str(type(self.args[i])).find('numpy') != -1:
 					np_args.append(self.args[i])
 					np_arg_nam.append(self.arg_nam[i])
-			self.cuda_exe.malloc(np_args,np_arg_nam)
+			self.cuda_exe.malloc(np_args,np_arg_nam,self.arg_mask)
 		self.body()
 		self.kernel = self.kernel + "}"
 #		self.print_cu()
