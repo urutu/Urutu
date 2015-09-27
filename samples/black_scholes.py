@@ -1,6 +1,9 @@
+"""
+This file runs BlackScholes algorithm on GPU
+Created by: Aditya Atluri
+"""
 from Urutu import *
 import numpy as np
-
 
 @Urutu("gpu")
 def black_scholes(si, xi, ti, d1, d2, call_result, put_result, sqrt_ti):

@@ -16,6 +16,7 @@ class cu_exe:
 	nam_args = []
 	id_ret = []
 	is_alloc = []
+	arg_mask = []
 	def exe_cu(self,stringg,func_name,threads,blocks,dyn_p,is_shared):
 		try:
 			import pycuda.driver as cuda
@@ -33,7 +34,7 @@ class cu_exe:
 		else:
 			func(*self.cu_args,block=(threads[0],threads[1],threads[2]),grid=(blocks[0],blocks[1],blocks[2]))
 
-	def malloc(self,args,arg_nam):
+	def malloc(self,args,arg_nam,mask):
 		try:
 			import pycuda.driver as cuda
 			import pycuda.autoinit
@@ -42,8 +43,12 @@ class cu_exe:
 		self.args = args
 		self.nam_args = arg_nam
 		self.argl = len(args)
+		self.arg_mask = mask;
 		for i in range(len(args)):
-			self.cu_args.append(cuda.mem_alloc(args[i].nbytes))
+			if mask[i] == True:
+				self.cu_args.append(cuda.mem_alloc(args[i].nbytes))
+			else:
+				self.cu_args.append(args[i])
 		
 	def htod(self,arg_nam):
 		try:
@@ -56,16 +61,17 @@ class cu_exe:
 
 	def flags(self):
 		for i in self.nam_args:
-			self.is_alloc.append(False)
-			if self.nam_returns.count(i) == 1:
-				self.id_ret.append(self.nam_args.index(i))
+			if self.arg_mask[self.nam_args.index(i)] == True:
+				self.is_alloc.append(False)
+				if self.nam_returns.count(i) == 1:
+					self.id_ret.append(self.nam_args.index(i))
 
 	def dfree(self):
 		import pycuda.driver as cuda
 		import pycuda.autoinit
-		for arg in self.cu_args:
-			arg.free()
-			self.cu_args.pop(0)
+		for i in range(len(self.cu_args)):
+			if self.arg_mask[i] == True:
+				self.cu_args[i].free()
 
 	def get_cu_args(self):
 		return self.cu_args[:]

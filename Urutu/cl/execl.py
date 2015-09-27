@@ -52,12 +52,15 @@ class cl_exe:
 		elif self.argl == 10:
 			prg.CL_kernel(self.queue,threads,blocks, self.cl_args[0], self.cl_args[1], self.cl_args[2], self.cl_args[3], self.cl_args[4], self.cl_args[5], self.cl_args[6], self.cl_args[7], self.cl_args[8], self.cl_args[9])
 
-	def start(self,args,arg_nam):
+	def start(self,args,arg_nam, arg_mask):
 		self.args = args
 		self.nam_args = arg_nam
 		self.argl = len(args)
 		for i in range(self.argl):
-			self.cl_args.append(cl.Buffer(self.ctx,self.mf.READ_WRITE | self.mf.COPY_HOST_PTR, hostbuf = self.args[i]))
+			if arg_mask[i] == True:
+				self.cl_args.append(cl.Buffer(self.ctx,self.mf.READ_WRITE | self.mf.COPY_HOST_PTR, hostbuf = self.args[i]))
+			else:
+				self.cl_args.append(self.args[i])
 
 	def flags(self):
 		for i in self.nam_args:
