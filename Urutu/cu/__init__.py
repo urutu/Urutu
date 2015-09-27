@@ -76,6 +76,12 @@ class ur_cuda:
 	moved = []
 	cuda_exe = 0
 	arg_mask = []
+	data_parallel = False
+	dp_code = ""
+	dp_arg_name = []
+	dp_arg_type = []
+	dp_global = ""
+	dp_thread_cap = 0
 #The structure is a tuple {'order of calling':,'line number':,'return':,'source':, 'args':,'htod':, 'dtoh':, }
 	cpu_empty = {'id':0, 'ln':0, 'return':[], 'src':"", 'args': [], 'htod': [], 'dtoh': [], 'isnext': False}
 	cpu_id = 0
@@ -83,6 +89,13 @@ class ur_cuda:
 	gpu_id = 1
 
 	def __init__(self, fn, args):
+		"""Here, the arguments passed to Urutu method is checked.
+		Different paths are taken from here.
+		1. Two lists represent usage of both threads and blocks
+		2. One list represent usage of only threads
+		3. String "retstr" represents returning the generated kernel.
+		Note that it does not work for data parallel methods
+		4. No extra agruments passed. Represents data parallel approach"""
 		stri = inspect.getsource(fn)
 		sh = shlex.shlex(stri)
 		self.code = stri
@@ -93,12 +106,24 @@ class ur_cuda:
 			self.threads = args[0]
 			self.blocks = args[1]
 			self.args = args[2:]
-		if args[0] == True:
+		if args[0] == "retstr":
 			self.return_kernel = True
 			self.args = args[1:]
+		else:
+			self.data_parallel = True
+			self.args = args
 		self.typeargs()
 
+	def assign_threads(self, length):
+		"""Number of threads are determined here!""" 
+		if length > 512:
+			self.threads[0] = 512
+			self.blocks[0] = length/512 + 1
+			self.dp_thread_cap = length
+		
+
 	def decarrays(self, phrase):
+		"""Different qualifiers for GPU data types are defined here."""
 #		print phrase
 		if phrase[0] == '__global' and phrase[1] == 'is':
 			phrase.pop(0)
@@ -127,7 +152,8 @@ class ur_cuda:
 #			print self.__constant
 
 	def typeargs(self):
-		id = 0
+		"""The data types of arguments are determined here"""
+		id, length = 0, 0
 		self.args = list(self.args)
 		for arg in self.args:
 			try:
@@ -135,6 +161,8 @@ class ur_cuda:
 			except:
 				j = str(type(arg)).split("'")
 			if 'numpy' in j[1]:
+				if len(arg) > length:
+					length = len(arg)
 				j = j[1].split(".")
 				self.type_args.append(j[1]+"*")
 				self.type_vars.append(j[1]+"*")
@@ -151,20 +179,27 @@ class ur_cuda:
 				self.type_vars.append(j[1])
 				self.arg_mask.append(False)
 			id = id + 1
+		self.assign_threads(length)
 
 	def funcname_cu(self,control):
+		"""The function name for the kernel and adding it to kernel takes place here"""
 		func_name = self.keys[control + 1]
 		self.kernel = self.kernel+"__global__ void " + func_name + "_1("
 		self.ismap.append(False)
 		self.global_func = func_name
+		if self.data_parallel == True:
+			self.dp_global = func_name
 		self.count_def = 1
 		return control + 2
 #		Return whether it is pass by reference or 
 
 	def semi_colon(self,phrase):
+		"""Utility function which adds a phrase passed and a semi-colon to the kernel source"""
 		self.kernel = self.kernel + phrase + ";\n"
 
 	def declare_workitems(self,keys,kernel):
+		"""The work items are declared in the kernel depending on their
+		declaration in Urutu method"""
 #		The keys are strings
 #		print "\n\nDEC_WORKITEMS", keys, self.device_threads_dec, self.device_blocks_dec
 		if keys.find('tx') > -1:
@@ -182,6 +217,7 @@ class ur_cuda:
 		return kernel
 
 	def remove_workitems(self):
+		"""Removes any redundant declaration of threads and blocks"""
 		if self.var_nam.count('tx') > 0:
 			self.var_nam.remove('tx')
 		if self.var_nam.count('ty') > 0:
@@ -209,6 +245,7 @@ class ur_cuda:
 
 	def inspect_it(self,sentence,kernel):
 #		print "Inside inspect_it()",sentence,kernel
+		"""The Urutu method translates to CUDA kernel here."""
 		phrase = sentence.split('\t')
 		if phrase.count('#') > 0:
 			return
@@ -378,6 +415,7 @@ class ur_cuda:
 		modules.execute(module,function,string_args,cu_args)
 
 	def device_create_func(self,index,name,stmt):
+		"""Device methods declared inside Urutu method are translated here"""
 #		print "Inside DCF",name, stmt, self.device_py
 		if self.is_defined_device[index] == False:
 			device_keys = self.device_py[index]
@@ -414,6 +452,7 @@ class ur_cuda:
 		return "/**/"
 
 	def dyn_parallel(self,stmt,name):
+		"""Method that translates Dynamic Parallel Urutu method to CUDA"""
 		dimGrid = "dimGrid_"+str(name)
 		dimBlock = "dimBlock_"+str(name)
 		str_dec_blocks = "dim3 " + dimGrid + '(' + str(self.device_num_blocks[0]) + ',' + str(self.device_num_blocks[1]) + ',' + str(self.device_num_blocks[2]) + ");\n"
@@ -425,6 +464,8 @@ class ur_cuda:
 		return str_dec_blocks+str_dec_threads+str_dyn_first+str_dyn_last
 
 	def device_funcname(self,func_name,stmt,args,device,is_dyn_parallel):
+		"""Getting Device function name depending on whether dynamic parallelism is
+		activated or not"""
 #		print "Inside device_funcname: ", stmt
 		while ',' in args:
 			args.remove(',')
@@ -489,6 +530,7 @@ class ur_cuda:
 
 # convert the list into string
 	def stringize(self, stmt):
+		"""Used to convert a list of words to a sentence"""
 		phrase = ''
 		for i in stmt:
 			phrase = phrase + str(i)
@@ -497,6 +539,7 @@ class ur_cuda:
 
 # Checking the type of variable to be created
 	def checktype(self,var,val):
+		"""Used to check the type of variable"""
 		if val.count('.') > 0:
 			if self.var_nam.count(var[0]) > 0:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
@@ -567,6 +610,7 @@ class ur_cuda:
 				return '','',self.stringize(var[:]), self.stringize(val[:])
 
 	def movedata(self, args):
+		"""Used for lazy data transfer. Will move data depending on the usage inside kernel"""
 #		for i in args:
 		if self.moved.count(args) < 1:
 			if self.return_kernel == False and self.arg_mask[self.arg_nam.index(args)] == True:
@@ -575,6 +619,7 @@ class ur_cuda:
 		self.moved = list(set(self.moved))
 
 	def addtovarnam(self, var, typevar):
+		"""Add a variable name to declared list and its data type"""
 		if type(var) is tuple:
 			if self.var_nam.count(var[0]) < 1:
 				self.var_nam.append(var[0])
@@ -587,6 +632,7 @@ class ur_cuda:
 
 # a = 10 type variables are declared here!
 	def decvars(self,stmt,phrase,kernel):
+		"""Declare new variables are handled here"""
 #		if kernel[-2] == '}':
 #			kernel = kernel[:-2]
 #			kernel += "\n"
@@ -901,7 +947,43 @@ class ur_cuda:
 	def run_gpu(self,gpu_data):
 		self.cuda_exe.exe_cu(gpu_data, self.global_func +"_"+str(self.gpu_id), self.threads, self.blocks, self.device_dyn_p, self.is_shared)
 
+	def dp_checktypes(self, nptype):
+		"""Checking types of arguments for data parallelism activated kernel"""
+		if nptype == "int64":
+			nptype = "long"
+		if nptype == "int32":
+			nptype == "int"
+		if nptype == "float32":
+			nptype = "float"
+		if nptype == "float64":
+			nptype = "double"
+		return nptype
+
+	def dp_args(self):
+		"""Process the arguments for declaring the data parallel device code
+		and caller inside global function"""
+		for i in range(len(self.args)):
+			try:
+				a = self.args[i][0]
+				j = str(type(a)).split(".")
+				j = j[1].split("'")
+				pas = self.arg_nam[i] + "[tid]"
+			except:
+				a = self.args[i]
+				j = str(type(a)).split(".")
+				j = j[1].split("'")
+				pas = self.arg_nam[i]
+			if i < len(self.args) - 1:
+				self.kernel += pas + ","
+				self.dp_code += self.dp_checktypes(j[0]) + " &" + self.arg_nam[i] + ","
+			else:
+				self.kernel += pas + ");\n}\n"
+				self.dp_code += self.dp_checktypes(j[0]) + " &" + self.arg_nam[i] + ")"
+		self.kernel = self.dp_code + ";\n" + self.kernel
+		self.dp_code = self.dp_code + "{\n"
+
 	def execute(self):
+		"""Execute the code."""
 		self.cuda_exe = execu.cu_exe()
 		sh = shlex.shlex(self.code)
 		i = sh.get_token()
@@ -931,6 +1013,18 @@ class ur_cuda:
 			control = control + 1
 		if self.keys[control] == ':':
 			control = control + 1
+		if self.data_parallel == True:
+			""""What we do here is setup the required data for __device__ function inside
+			__global__ function"""
+			self.kernel += "int tid = threadIdx.x + blockIdx.x * blockDim.x;\n"
+			macro = "#define CAP " + str(self.dp_thread_cap) + "\n"
+			self.kernel += macro + "if(tid < CAP){\n"
+			self.kernel += self.dp_global + "_device(";
+			self.dp_code = "__device__ void " + self.dp_global + "_device("
+			self.dp_args()
+			self.kernel += "}\n"
+			self.kernel = self.kernel + self.dp_code
+			"""From here, the __device__ function gets filled instead of __global__"""
 		self.sentences = self.code.split("\n")
 		self.sentences.remove(self.sentences[1])
 		self.sentences.remove(self.sentences[-2])
